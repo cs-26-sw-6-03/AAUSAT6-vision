@@ -1,5 +1,5 @@
 #include <iostream>
-#include "utils/Config.hpp"
+#include "utils/config.hpp"
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
