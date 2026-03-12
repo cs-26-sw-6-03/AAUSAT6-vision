@@ -1,0 +1,42 @@
+pipeline:
+  queue_size: 32          # Max frames buffered per stage queue
+
+optical_flow:
+  max_corners: 200
+  quality_level: 0.01
+  min_distance: 10.0
+  tracking_threshold: 0.75   # Fraction of points that must be tracked
+  redetect_interval: 30      # Force ORB redetect every N frames regardless
+
+orb:
+  n_features: 1000
+  scale_factor: 1.2
+  n_levels: 8
+  edge_threshold: 31
+  patch_size: 31
+
+matching:
+  hamming_ratio_test: 0.75   # Lowe's ratio test threshold
+  cross_check: false
+
+ransac:
+  method: EG_RANSAC          # RANSAC | EG_RANSAC | USAC_MAGSAC
+  reproj_threshold: 3.0
+  confidence: 0.99
+  max_iterations: 2000
+
+pose:
+  enabled: true
+
+output:
+  gstreamer_pipeline: "appsrc ! videoconvert ! autovideosink"
+  width: 1280
+  height: 720
+  fps: 30
+
+db:
+  path: "data/keypoints.db"
+
+logging:
+  level: info                # debug | info | warn | error
+  file: ""                   # Empty = stdout only

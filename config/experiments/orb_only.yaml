@@ -1,0 +1,12 @@
+# Experiment: force ORB redetect every frame, disable optical flow tracking.
+# Merge on top of default.yaml — only overrides what's listed here.
+
+optical_flow:
+  tracking_threshold: 1.1    # Impossible to satisfy -> always redetect
+
+orb:
+  n_features: 2000
+
+ransac:
+  method: USAC_MAGSAC
+  reproj_threshold: 2.0
