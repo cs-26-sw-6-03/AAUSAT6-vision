@@ -2,7 +2,7 @@
 # All reusable code builds into a static lib, linked by the main executable and tests.
 
 add_library(vision_lib STATIC
-    pipeline/Router.cpp
+    pipeline/router.cpp
 
     # Stages — add files here as you implement them
     # stages/CaptureStage.cpp
