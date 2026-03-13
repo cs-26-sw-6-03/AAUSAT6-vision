@@ -15,6 +15,7 @@
 
 // Routing flags: set by stages. Signals what the next stage should do.
 struct RoutingFlags {
+    bool from_input       = false;    // Frame just captured — route to first processing stage
     bool needs_redetect   = false;    // Optical flow lost tracking — run ORB
     bool has_keypoints    = false;    // ORB stage completed
     bool has_matches      = false;    // Matching stage completed
