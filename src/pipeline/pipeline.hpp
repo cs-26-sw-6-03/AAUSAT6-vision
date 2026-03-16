@@ -9,7 +9,7 @@
 
 #include "threadedstage.hpp"
 #include "router.hpp"
-#include "../utils/Config.hpp"
+#include "../utils/config.hpp"
 
 #include <unordered_map>
 #include <vector>

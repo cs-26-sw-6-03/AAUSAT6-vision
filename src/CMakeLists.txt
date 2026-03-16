@@ -3,11 +3,11 @@
 
 add_library(vision_lib STATIC
     pipeline/router.cpp
-    pipeline/threadedStage.cpp
+    pipeline/threadedstage.cpp
     pipeline/pipeline.cpp
 
     # Stages — add files here as you implement them
-    stages/capture_stage.cpp
+    #####stages/capture_stage.hpp
     # stages/OpticalFlowStage.cpp
     # stages/OrbStage.cpp
     # stages/MatchingStage.cpp

@@ -1,6 +1,6 @@
 #pragma once
 /*
- * capture_stage.hpp
+ * capture_stage.cpp
  *
  * Produces frames from a source and dispatches them into the pipeline via the Router.
  * Inherits ThreadedStage for consistent lifecycle management, but overrides run()
@@ -11,8 +11,8 @@
  *   - A GStreamer pipeline  e.g. "v4l2src ! videoconvert ! appsink"  (detected by '!')
  */
 
-#include "../pipeline/threaded_stage.hpp"
-#include "../../utils/config.hpp"
+#include "../pipeline/threadedstage.hpp"
+#include "../utils/config.hpp"
 
 #include <opencv2/videoio.hpp>
 #include <stdexcept>

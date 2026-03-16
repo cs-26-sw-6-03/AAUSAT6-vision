@@ -31,8 +31,7 @@ class ThreadedStage : public Stage {
 public:
     ThreadedStage(std::string name,
                   std::shared_ptr<Router> router,
-                  size_t queue_size = 32,
-                  bool is_source = false);
+                  size_t queue_size = 32);
  
     ~ThreadedStage() override;
  
