@@ -1,3 +1,5 @@
+#pragma once
+
 /* 
  * threadsafequeue.hpp
  *
@@ -5,8 +7,6 @@
  * 
  * TODO: Needs review
  */
-
-#pragma once
 
 #include <queue>
 #include <mutex>

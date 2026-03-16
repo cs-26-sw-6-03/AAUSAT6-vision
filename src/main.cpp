@@ -1,54 +1,68 @@
 #include <iostream>
-#include <thread>
+#include <csignal>
+#include <atomic>
 
 #include "utils/config.hpp"
-#include "pipeline/router.hpp"
-#include "pipeline/stages/capture_stage.hpp"
-#include "utils/config.hpp"
+#include "pipeline/pipeline.hpp"
 
+// --- Stages (uncomment as they are implemented) ---
+#include "stages/capture_stage.hpp"
+// #include "stages/optical_flow_stage.hpp"
+// #include "stages/orb_stage.hpp"
+// #include "stages/matching_stage.hpp"
+// #include "stages/ransac_stage.hpp"
+// #include "stages/pose_stage.hpp"
+// #include "stages/output_stage.hpp"
+ 
+static std::atomic<bool> g_shutdown{false};
+ 
+static void signal_handler(int) {
+    g_shutdown.store(true);
+}
+ 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::cerr << "Usage: vision <config.yaml> [experiment_overlay.yaml]\n";
         return 1;
     }
-
+ 
+    // --- Config ---
     Config cfg(argv[1]);
     if (argc >= 3) {
         cfg.merge(argv[2]);
     }
-
     std::cout << "aausat6-vision starting\n";
-    std::cout << "Config: " << cfg.path() << "\n";
-
-    Router router;
-
-    // --- Register stage queues ---
-    int queue_size = cfg.get<int>("pipeline.queue_size", 32);
-
-    auto optical_flow_queue = std::make_shared<FrameQueue>(queue_size);
-    router.register_stage("optical_flow", optical_flow_queue);
-
-    // --- Stub consumer: prints each received frame so we can verify capture works ---
-    std::thread optical_flow_thread([&]() {
-        while (true) {
-            auto ctx = optical_flow_queue->pop();
-            if (!ctx) break;    // queue stopped
-
-            std::cout << "frame " << (*ctx)->frame_id
-                      << "  size=" << (*ctx)->frame.cols << "x" << (*ctx)->frame.rows
-                      << "  prev=" << ((*ctx)->frame_prev.empty() ? "none" : "ok")
-                      << "\n";
-        }
-    });
-
-    // --- Start capture ---
-    CaptureStage capture(router, cfg);
-    capture.start();
-    capture.wait();     // blocks until source ends (or stop() is called)
-
-    optical_flow_queue->stop();
-    optical_flow_thread.join();
-
-    std::cout << "Done.\n";
+    std::cout << "Config:  " << cfg.path() << "\n";
+ 
+    // --- Signal handling ---
+    std::signal(SIGINT,  signal_handler);
+    std::signal(SIGTERM, signal_handler);
+ 
+    // --- Build pipeline ---
+    Pipeline pipeline(cfg);
+ 
+    // Add stages in pipeline order.
+    // Each stage gets the shared router and config.
+    // Uncomment and replace stubs as stages are implemented.
+ 
+    pipeline.add_stage(std::make_shared<CaptureStage>     (pipeline.router(), cfg));
+    // pipeline.add_stage(std::make_shared<OpticalFlowStage> (pipeline.router(), cfg));
+    // pipeline.add_stage(std::make_shared<OrbStage>         (pipeline.router(), cfg));
+    // pipeline.add_stage(std::make_shared<MatchingStage>    (pipeline.router(), cfg));
+    // pipeline.add_stage(std::make_shared<RansacStage>      (pipeline.router(), cfg));
+    // pipeline.add_stage(std::make_shared<PoseStage>        (pipeline.router(), cfg));
+    // pipeline.add_stage(std::make_shared<OutputStage>      (pipeline.router(), cfg));
+ 
+    pipeline.start();
+ 
+    // --- Run until SIGINT / SIGTERM ---
+    std::cout << "Running. Press Ctrl+C to stop.\n";
+    while (!g_shutdown.load()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+ 
+    std::cout << "\nShutting down...\n";
+    pipeline.stop();
+ 
     return 0;
 }

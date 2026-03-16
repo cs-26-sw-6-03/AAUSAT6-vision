@@ -1,10 +1,11 @@
+#pragma once
+
 /* 
  * config.hpp
  *
  * Load the config form a YAML file
  * TODO: Needs review
  */
-#pragma once
 
 #include <yaml-cpp/yaml.h>
 #include <string>
