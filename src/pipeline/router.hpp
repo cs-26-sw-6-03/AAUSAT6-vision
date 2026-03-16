@@ -1,3 +1,5 @@
+#pragma once
+
 /* 
  * router.hpp
  *
@@ -6,8 +8,6 @@
  * with the Router, providing a name and an input queue. The Router then dispatches
  * frames to the appropriate stage based on flags set in the FrameContext.
  */
-
-#pragma once
 
 #include "framecontext.hpp"
 #include "../utils/threadsafequeue.hpp"

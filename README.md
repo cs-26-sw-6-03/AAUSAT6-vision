@@ -1,5 +1,6 @@
 # AAUSAT6-vision
 
+`cmake`
 
 ## Dirs
 

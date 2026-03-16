@@ -1,4 +1,5 @@
 #pragma once
+
 /* 
  * framecontext.hpp
  *
@@ -16,14 +17,14 @@
 
 // Routing flags: set by stages. Signals what the next stage should do.
 struct RoutingFlags {
-    bool from_input       = false;    // Frame just captured — route to first processing stage
-    bool needs_redetect   = false;    // Optical flow lost tracking — run ORB
+    bool from_input       = false;    // Frame just captured - route to first processing stage - route to optical_flow
+    bool needs_redetect   = false;    // Optical flow lost tracking - run ORB
     bool has_keypoints    = false;    // ORB stage completed
     bool has_matches      = false;    // Matching stage completed
     bool has_inliers      = false;    // RANSAC stage completed
     bool has_pose         = false;    // Pose estimation completed
-    bool skip_processing  = false;    // Tracking was good — go straight to output
-    bool drop_frame       = false;    // Frame is unusable — discard
+    bool skip_processing  = false;    // Tracking was good - go straight to output
+    bool drop_frame       = false;    // Frame is unusable - discard
 };
 
 // Optical flow result struct
