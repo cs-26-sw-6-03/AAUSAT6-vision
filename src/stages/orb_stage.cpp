@@ -1,4 +1,11 @@
-/* class OrbStage : public ThreadedStage {
+#include "../pipeline/threadedstage.hpp"
+#include "../utils/config.hpp"
+
+#include <opencv2/videoio.hpp>
+#include <stdexcept>
+#include <string>
+
+class OrbStage : public ThreadedStage {
 public:
     OrbStage(std::shared_ptr<Router> router, const Config& cfg)
         : ThreadedStage("orb", router, cfg.get<int>("pipeline.queue_size", 32))
@@ -11,12 +18,20 @@ public:
 
     void process(std::shared_ptr<FrameContext> ctx) override {
         orb_->detectAndCompute(ctx->frame, cv::noArray(),
-                               ctx->orb.emplace().keypoints,
-                               ctx->orb->descriptors);
+                               ctx->orb_result.emplace().keypoints,
+                               ctx->orb_result->descriptors);
         ctx->flags.has_keypoints = true;
     }
+
+    // Retrieve current sets of keypoints and descruotirs
+
+    //Run through each pair through detection
+        //BF matching
+        
+        //If detection is valid, break current loop and pass the ctx to the router
+        
 
 private:
     cv::Ptr<cv::ORB> orb_;
     int n_features_;
-}; */
+};
