@@ -1,6 +1,10 @@
 pipeline:
   queue_size: 32          # Max frames buffered per stage queue
 
+input:
+  source: ""              # File path or GStreamer pipeline string (required)
+  loop: false             # Reopen source when it ends (useful for file inputs)
+
 optical_flow:
   max_corners: 200
   quality_level: 0.01
