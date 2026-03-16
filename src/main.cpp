@@ -4,6 +4,7 @@
 #include "utils/config.hpp"
 #include "pipeline/router.hpp"
 #include "pipeline/stages/capture_stage.hpp"
+#include "utils/config.hpp"
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
