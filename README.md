@@ -100,4 +100,4 @@ cmake -B build/Release -DCMAKE_BUILD_TYPE=Release && cmake --build build/Release
 ## Run
 
 1. Find the script
-2. Run with extra configs like `PATH/TO/EXEC/vision config/input_naitsa.yaml`
+2. Run with extra configs like `build/Release/src/vision config/experiments/naitsa.yaml`

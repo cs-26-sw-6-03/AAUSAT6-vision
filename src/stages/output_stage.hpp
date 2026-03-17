@@ -38,11 +38,12 @@
  *  output.rtp.encoder      GStreamer encoder element, e.g. "vpuenc_h264"
  */
 
-#include "../pipeline/threaded_stage.hpp"
+#include "../pipeline/threadedstage.hpp"
 #include "../utils/config.hpp"
 
 #include <gst/gst.h>
 #include <gst/app/gstappsrc.h>
+#include <opencv2/imgproc.hpp>
 
 #include <stdexcept>
 #include <string>
@@ -51,13 +52,14 @@
 class OutputStage : public ThreadedStage {
 public:
     OutputStage(std::shared_ptr<Router> router, const Config& cfg)
-        : ThreadedStage(output, std::move(router), 1) // queue_size=1, backpressure should be handled by blocking appsrc
+        : ThreadedStage("output", router, 1) // queue_size=1, backpressure should be handled by blocking appsrc
         , mode_(cfg.require<std::string>("output.mode"))
         , fps_(cfg.get<int>("output.fps", 30)) // default 30 fps
         , width_(cfg.get<int>("output.width", 0)) // default: use input
         , height_(cfg.get<int>("output.height", 0)) // default: use input
         {
-            
+            std::string mode = cfg.require<std::string>("output.mode");
+
             // set up mode-specific configs
             if (mode == "file") {
                 file_path_    = cfg.require<std::string>("output.file.path");

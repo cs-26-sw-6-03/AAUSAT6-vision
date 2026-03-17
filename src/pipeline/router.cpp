@@ -43,16 +43,23 @@ bool Router::dispatch(std::shared_ptr<FrameContext> ctx) {
 //                orb -> matching -> ransac -> pose -> output
 std::string Router::default_route(const FrameContext& ctx) const {
     const auto& f = ctx.flags;
- 
-    if (f.drop_frame)       return "";
+
+    /* if (f.drop_frame)       return "";
     if (f.skip_processing)  return "output";
     if (f.has_pose)         return "output";
     if (f.has_inliers)      return "pose";
     if (f.has_matches)      return "ransac";
     if (f.has_keypoints)    return "matching";
-    if (f.from_input)       return "optical_flow";
     if (f.needs_redetect)   return "orb";
+    if (f.from_input)       return "optical_flow"; */
 
- 
+    // Only allow routing to 'capture' and 'output' stages for now
+    if (f.drop_frame)      return "";
+    if (f.skip_processing) return "output";
+    if (f.from_input)      return "capture";
+    // If the frame has already been processed, send to output
+    if (f.has_pose)        return "output";
+
+    // All other stages are skipped
     return "";
 }

@@ -12,7 +12,7 @@ add_library(vision_lib STATIC
     # stages/MatchingStage.cpp
     # stages/RansacStage.cpp
     # stages/PoseStage.cpp
-    # stages/OutputStage.cpp
+    # stages/output_stage.cpp
 
     # DB
     utils/picture_db.cpp
