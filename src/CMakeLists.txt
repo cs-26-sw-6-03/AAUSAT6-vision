@@ -8,7 +8,7 @@ add_library(vision_lib STATIC
 
     # Stages — add files here as you implement them
     # stages/OpticalFlowStage.cpp
-    # stages/orb_stage.cpp
+    stages/orb_stage.cpp
     # stages/MatchingStage.cpp
     # stages/RansacStage.cpp
     # stages/PoseStage.cpp
