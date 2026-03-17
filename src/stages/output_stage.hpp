@@ -52,33 +52,33 @@
 class OutputStage : public ThreadedStage {
 public:
     OutputStage(std::shared_ptr<Router> router, const Config& cfg)
-        : ThreadedStage("output", router, 1) // queue_size=1, backpressure should be handled by blocking appsrc
+        : ThreadedStage("output", std::move(router), cfg.get<int>("pipeline.queue_size", 32))
         , mode_(cfg.require<std::string>("output.mode"))
         , fps_(cfg.get<int>("output.fps", 30)) // default 30 fps
         , width_(cfg.get<int>("output.width", 0)) // default: use input
         , height_(cfg.get<int>("output.height", 0)) // default: use input
         {
-            std::string mode = cfg.require<std::string>("output.mode");
+            //std::string mode = cfg.require<std::string>("output.mode");
 
             // set up mode-specific configs
-            if (mode == "file") {
+            if (mode_ == "file") {
                 file_path_    = cfg.require<std::string>("output.file.path");
                 file_encoder_ = cfg.get<std::string>("output.file.encoder", "x264enc");
                 file_muxer_   = cfg.get<std::string>("output.file.muxer",   "mp4mux");
-            } else if (mode == "rtp") {
+            } else if (mode_ == "rtp") {
                 rtp_host_     = cfg.require<std::string>("output.rtp.host");
                 rtp_port_     = cfg.require<int>("output.rtp.port");
                 rtp_encoder_  = cfg.get<std::string>("output.rtp.encoder", "x264enc");
-            } else if (mode == "file_vpu") {
+            } else if (mode_ == "file_vpu") {
                 file_path_    = cfg.require<std::string>("output.file.path");
                 file_encoder_ = cfg.get<std::string>("output.file.encoder", "vpuenc_h264");
                 file_muxer_   = cfg.get<std::string>("output.file.muxer",   "h264parse");
-            } else if (mode == "rtp_vpu") {
+            } else if (mode_ == "rtp_vpu") {
                 rtp_host_     = cfg.require<std::string>("output.rtp.host");
                 rtp_port_     = cfg.require<int>("output.rtp.port");
                 rtp_encoder_  = cfg.get<std::string>("output.rtp.encoder", "vpuenc_h264");
             } else {
-                throw std::runtime_error("OutputStage: unknown mode '" + mode + "'. Expected 'file' or 'rtp' or 'file_vpu' or 'rtp_vpu'.");
+                throw std::runtime_error("OutputStage: unknown mode '" + mode_ + "'. Expected 'file' or 'rtp' or 'file_vpu' or 'rtp_vpu'.");
             }
         }
 
