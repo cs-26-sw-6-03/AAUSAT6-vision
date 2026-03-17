@@ -7,7 +7,7 @@
 
 // --- Stages (uncomment as they are implemented) ---
 #include "stages/capture_stage.hpp"
-// #include "stages/optical_flow_stage.hpp"
+#include "stages/optical_flow_stage.hpp"
 // #include "stages/orb_stage.hpp"
 // #include "stages/matching_stage.hpp"
 // #include "stages/ransac_stage.hpp"
@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
     // Uncomment and replace stubs as stages are implemented.
  
     pipeline.add_stage(std::make_shared<CaptureStage>     (pipeline.router(), cfg));
-    // pipeline.add_stage(std::make_shared<OpticalFlowStage> (pipeline.router(), cfg));
+    pipeline.add_stage(std::make_shared<OpticalFlowStage> (pipeline.router(), cfg));
     // pipeline.add_stage(std::make_shared<OrbStage>         (pipeline.router(), cfg));
     // pipeline.add_stage(std::make_shared<MatchingStage>    (pipeline.router(), cfg));
     // pipeline.add_stage(std::make_shared<RansacStage>      (pipeline.router(), cfg));

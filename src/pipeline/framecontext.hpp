@@ -32,7 +32,8 @@ struct OpticalFlowResult {
     std::vector<cv::Point2f> points_prev;
     std::vector<cv::Point2f> points_curr;
     std::vector<uchar>       status;                   // Per-point tracking status
-    float                    tracking_score = 0.0f;    // Fraction of points tracked
+    float                    tracking_score = 0.0f;
+    cv::Point2f              suggested_center;    // Fraction of points tracked
 };
 
 // Oriented 'Features from Accelerated Segment Test (FAST)' and Rotated 'Binary Robust Independent Elementary Features (BRIEF)' (ORB) result
