@@ -90,7 +90,8 @@ public:
         gst_element_set_state(pipeline_, GST_STATE_PLAYING); // set pipeline to playing so it's ready to receive frames
     }
 
-/*     void shutdown() override {
+    void shutdown() override {
+        // Shutdown resource managment
         if (pipeline_) {
             gst_element_send_event(pipeline_, gst_event_new_eos());
             // Wait for EOS to propagate
@@ -103,40 +104,39 @@ public:
             pipeline_ = nullptr;
             appsrc_   = nullptr;
         }
-    } */
+    }
 
-/*    void process(std::shared_ptr<FrameContext> ctx) override {
-        if (!ctx || ctx->frame.empty()) return;
+    void process(std::shared_ptr<FrameContext> ctx) override {
+        if (!ctx || ctx->frame.empty()) return; // if frame is empty, skip processing
 
-        cv::Mat frame = ctx->frame;
+        cv::Mat frame = ctx->frame; // make alias for frame in context (we do not like hte -> syntax)
 
         // Resize if config specifies fixed dimensions
+        // TODO: MAYBE NEEDS REFACTOR, CROPPING/RESIZING SHOULD MAYBE BE BEFORE DISPATCHING TO THIS STAGE?
         if (width_ > 0 && height_ > 0 &&
             (frame.cols != width_ || frame.rows != height_)) {
             cv::resize(frame, frame, cv::Size(width_, height_));
         }
 
         // GStreamer expects BGR, which is OpenCV's default — no conversion needed
-        gsize size = static_cast<gsize>(frame.total() * frame.elemSize());
-        GstBuffer* buf = gst_buffer_new_allocate(nullptr, size, nullptr);
+        gsize size = static_cast<gsize>(frame.total() * frame.elemSize()); // calc frame size in bytes
+        GstBuffer* buf = gst_buffer_new_allocate(nullptr, size, nullptr); // alloc gst buffer for frame data
 
-        GstMapInfo map;
+        GstMapInfo map; // map buffer memory so we can write frame data into it
         gst_buffer_map(buf, &map, GST_MAP_WRITE);
-        std::memcpy(map.data, frame.data, size);
-        gst_buffer_unmap(buf, &map);
+        std::memcpy(map.data, frame.data, size); // copy frame data into gst buffer
+        gst_buffer_unmap(buf, &map); //unmap buffer memory, im done writing data into it
 
         // Timestamp
-        GST_BUFFER_PTS(buf) = gst_util_uint64_scale(frame_count_,
-                                                      GST_SECOND, fps_);
-        GST_BUFFER_DURATION(buf) = gst_util_uint64_scale(1, GST_SECOND, fps_);
-        ++frame_count_;
+        GST_BUFFER_PTS(buf) = gst_util_uint64_scale(frame_count_, GST_SECOND, fps_); // presentation timestamp based on framecontext
+        GST_BUFFER_DURATION(buf) = gst_util_uint64_scale(1, GST_SECOND, fps_); //frame duration based on fps config
+        ++frame_count_; // increment frame count for next timestamp
 
-        GstFlowReturn ret = gst_app_src_push_buffer(appsrc_, buf);
+        GstFlowReturn ret = gst_app_src_push_buffer(appsrc_, buf); // push buffer into pipeline via appsrc
         if (ret != GST_FLOW_OK) {
-            throw std::runtime_error("OutputStage: gst_app_src_push_buffer failed: " +
-                                     std::to_string(ret));
+            throw std::runtime_error("OutputStage: gst_app_src_push_buffer failed: " + std::to_string(ret));
         }
-    } */
+    }
 
 private:
     GstElement* build_pipeline() {
