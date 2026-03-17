@@ -1,0 +1,180 @@
+#pragma once
+
+/*
+ * output_stage.hpp
+ *
+ * Terminal stage — receives processed frames and pushes them out.
+ * Mode is selected via config:
+ *
+ *   output.mode: file       → GStreamer filesink (e.g. MP4/MKV)
+ *   output.mode: rtp        → RTP/UDP stream via GStreamer
+ *
+ * Config keys:
+ *
+ *   output.mode             file | rtp
+ *   output.width            frame width  (default: use frame dimensions)
+ *   output.height           frame height (default: use frame dimensions)
+ *   output.fps              frames per second (default: 30)
+ *
+ *   # file mode
+ *   output.file.path        output file path, e.g. "out/recording.mp4"
+ *   output.file.encoder     GStreamer encoder element, e.g. "x264enc"
+ *   output.file.muxer       GStreamer muxer element,   e.g. "mp4mux"
+ *
+ *   # rtp mode
+ *   output.rtp.host         destination IP
+ *   output.rtp.port         destination UDP port
+ *   output.rtp.encoder      GStreamer encoder element, e.g. "x264enc"
+ */
+
+#include "../pipeline/threaded_stage.hpp"
+#include "../utils/config.hpp"
+
+#include <gst/gst.h>
+#include <gst/app/gstappsrc.h>
+
+#include <stdexcept>
+#include <string>
+#include <sstream>
+
+class OutputStage : public ThreadedStage {
+public:
+/*     OutputStage(std::shared_ptr<Router> router, const Config& cfg)
+        : ThreadedStage("output", std::move(router),
+                        cfg.get<int>("pipeline.queue_size", 32))
+        , mode_(cfg.require<std::string>("output.mode"))
+        , fps_(cfg.get<int>("output.fps", 30))
+        , width_(cfg.get<int>("output.width", 0))
+        , height_(cfg.get<int>("output.height", 0))
+    {
+        if (mode_ == "file") {
+            file_path_    = cfg.require<std::string>("output.file.path");
+            file_encoder_ = cfg.get<std::string>("output.file.encoder", "x264enc");
+            file_muxer_   = cfg.get<std::string>("output.file.muxer",   "mp4mux");
+        } else if (mode_ == "rtp") {
+            rtp_host_     = cfg.require<std::string>("output.rtp.host");
+            rtp_port_     = cfg.require<int>("output.rtp.port");
+            rtp_encoder_  = cfg.get<std::string>("output.rtp.encoder", "x264enc");
+        } else {
+            throw std::runtime_error("OutputStage: unknown mode '" + mode_ +
+                                     "'. Expected 'file' or 'rtp'.");
+        }
+    }
+
+    void init() override {
+        gst_init(nullptr, nullptr);
+        pipeline_ = build_pipeline();
+        appsrc_   = GST_APP_SRC(gst_bin_get_by_name(GST_BIN(pipeline_), "src"));
+        if (!appsrc_) {
+            throw std::runtime_error("OutputStage: could not find appsrc element 'src'");
+        }
+        gst_element_set_state(pipeline_, GST_STATE_PLAYING);
+    }
+
+    void shutdown() override {
+        if (pipeline_) {
+            gst_element_send_event(pipeline_, gst_event_new_eos());
+            // Wait for EOS to propagate
+            GstBus* bus = gst_element_get_bus(pipeline_);
+            gst_bus_timed_pop_filtered(bus, GST_SECOND * 5,
+                                       static_cast<GstMessageType>(GST_MESSAGE_EOS | GST_MESSAGE_ERROR));
+            gst_object_unref(bus);
+            gst_element_set_state(pipeline_, GST_STATE_NULL);
+            gst_object_unref(pipeline_);
+            pipeline_ = nullptr;
+            appsrc_   = nullptr;
+        }
+    }
+
+    void process(std::shared_ptr<FrameContext> ctx) override {
+        if (!ctx || ctx->frame.empty()) return;
+
+        cv::Mat frame = ctx->frame;
+
+        // Resize if config specifies fixed dimensions
+        if (width_ > 0 && height_ > 0 &&
+            (frame.cols != width_ || frame.rows != height_)) {
+            cv::resize(frame, frame, cv::Size(width_, height_));
+        }
+
+        // GStreamer expects BGR, which is OpenCV's default — no conversion needed
+        gsize size = static_cast<gsize>(frame.total() * frame.elemSize());
+        GstBuffer* buf = gst_buffer_new_allocate(nullptr, size, nullptr);
+
+        GstMapInfo map;
+        gst_buffer_map(buf, &map, GST_MAP_WRITE);
+        std::memcpy(map.data, frame.data, size);
+        gst_buffer_unmap(buf, &map);
+
+        // Timestamp
+        GST_BUFFER_PTS(buf) = gst_util_uint64_scale(frame_count_,
+                                                      GST_SECOND, fps_);
+        GST_BUFFER_DURATION(buf) = gst_util_uint64_scale(1, GST_SECOND, fps_);
+        ++frame_count_;
+
+        GstFlowReturn ret = gst_app_src_push_buffer(appsrc_, buf);
+        if (ret != GST_FLOW_OK) {
+            throw std::runtime_error("OutputStage: gst_app_src_push_buffer failed: " +
+                                     std::to_string(ret));
+        }
+    } */
+
+private:
+/*     GstElement* build_pipeline() {
+        std::string desc = build_pipeline_string();
+        GError* err = nullptr;
+        GstElement* pipe = gst_parse_launch(desc.c_str(), &err);
+        if (!pipe || err) {
+            std::string msg = err ? err->message : "unknown error";
+            if (err) g_error_free(err);
+            throw std::runtime_error("OutputStage: failed to build GStreamer pipeline: " + msg);
+        }
+        return pipe;
+    }
+
+    std::string build_pipeline_string() const {
+        // Caps for the appsrc — raw BGR frames from OpenCV
+        std::string caps =
+            "video/x-raw,format=BGR"
+            ",width=" + std::to_string(width_ > 0 ? width_ : 1280) +
+            ",height=" + std::to_string(height_ > 0 ? height_ : 720) +
+            ",framerate=" + std::to_string(fps_) + "/1";
+
+        std::ostringstream p;
+        p << "appsrc name=src is-live=true block=true format=time caps=\"" << caps << "\"";
+        p << " ! videoconvert";
+
+        if (mode_ == "file") {
+            p << " ! " << file_encoder_;
+            p << " ! " << file_muxer_;
+            p << " ! filesink location=\"" << file_path_ << "\"";
+        } else {  // rtp
+            p << " ! " << rtp_encoder_ << " tune=zerolatency";
+            p << " ! rtph264pay";
+            p << " ! udpsink host=" << rtp_host_ << " port=" << rtp_port_;
+        }
+
+        return p.str();
+    } */
+
+    // Config
+    std::string mode_;
+    int         fps_;
+    int         width_;
+    int         height_;
+
+    // File mode
+    std::string file_path_;
+    std::string file_encoder_;
+    std::string file_muxer_;
+
+    // RTP mode
+    std::string rtp_host_;
+    int         rtp_port_    = 0;
+    std::string rtp_encoder_;
+
+    // GStreamer
+    GstElement* pipeline_    = nullptr;
+    GstAppSrc*  appsrc_      = nullptr;
+    uint64_t    frame_count_ = 0;
+};
