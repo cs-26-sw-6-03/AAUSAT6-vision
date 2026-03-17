@@ -14,6 +14,13 @@ public:
 
     void init() override
     {
+    prev_detection_center = cv::Point2f(-1, -1);
+
+    frame_idx_ = 0;
+    prev_gray_.release();
+    prev_kps_.clear();
+    prev_desc_.release();
+
     }
 
     void process(std::shared_ptr<FrameContext> ctx) override
