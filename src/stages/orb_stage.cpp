@@ -10,7 +10,7 @@ public:
     OrbStage(std::shared_ptr<Router> router, const Config& cfg)
         : ThreadedStage("orb", router, cfg.get<int>("pipeline.queue_size", 32))
         , n_features_(cfg.get<int>("orb.n_features", 1000))
-        , picture_db_path_(cfg.get<std::string>("pictures.path", "/tmp/vision"))
+        , picture_db_path_(std::filesystem::path(cfg.get<std::string>("pictures.path", "/tmp/vision")))
         {}
 
     void init() override {
@@ -23,7 +23,7 @@ public:
                                ctx->orb_result.emplace().keypoints,
                                ctx->orb_result->descriptors);
         ctx->flags.has_keypoints = true;
-    }
+
 
     // Retrieve current sets of keypoints and descruotirs
 
@@ -31,6 +31,9 @@ public:
         //BF matching
         
         //If detection is valid, break current loop and pass the ctx to the router
+
+
+    }
         
 
 private:
