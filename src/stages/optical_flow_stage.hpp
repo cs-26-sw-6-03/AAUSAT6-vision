@@ -75,6 +75,8 @@ public:
             ctx->optical_flow_result->suggested_center = center;
             prev_detection_center = center;
         }
+        std::vector<cv::Point2f> prevFiltered;
+        std::vector<cv::Point2f> currFiltered;
 
         for (size_t i = 0; i < status.size(); i++)
         {
@@ -117,8 +119,6 @@ public:
     }
 
 private:
-    std::vector<cv::Point2f> prevFiltered;
-    std::vector<cv::Point2f> currFiltered;
     std::vector<cv::Point2f> curr_pts;
     std::vector<float> err;
     std::vector<uchar> status;
