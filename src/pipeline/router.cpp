@@ -53,10 +53,12 @@ std::string Router::default_route(const FrameContext& ctx) const {
     if (f.needs_redetect)   return "orb";
     if (f.from_input)       return "optical_flow"; */
 
-    // Only allow routing to 'capture' and 'output' stages for now
+    // Only allow routing to 'capture' and 'output' stages for now.
+    // With the current minimal pipeline (CaptureStage -> OutputStage),
+    // frames produced by capture should go directly to output.
     if (f.drop_frame)      return "";
     if (f.skip_processing) return "output";
-    if (f.from_input)      return "capture";
+    if (f.from_input)      return "output";
     // If the frame has already been processed, send to output
     if (f.has_pose)        return "output";
 
