@@ -69,8 +69,7 @@ Experiment overlays are merged on top of the base config. See `config/default.ya
 - `logging.level` (default: `info`) — `debug`, `info`, `warn`, or `error`
 - `logging.file` (default: `""`) — log file path, empty means stdout only
 
-## Technologies
-## Req.
+## req.
 
 **Ubuntu**:
 ```bash
