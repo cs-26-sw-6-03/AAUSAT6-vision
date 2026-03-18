@@ -10,6 +10,7 @@ public:
     OrbStage(std::shared_ptr<Router> router, const Config& cfg)
         : ThreadedStage("orb", router, cfg.get<int>("pipeline.queue_size", 32))
         , n_features_(cfg.get<int>("orb.n_features", 1000))
+        , min_matches_(cfg.get<int>("orb.min_matches", 10))
         , picture_db_path_(std::filesystem::path(cfg.get<std::string>("pictures.path", "/tmp/vision")))
         {}
 
@@ -17,28 +18,59 @@ public:
         orb_ = cv::ORB::create(n_features_);
         picture_db_ = std::make_shared<PictureDB>(picture_db_path_);
     }
-    
+
     void process(std::shared_ptr<FrameContext> ctx) override {
         orb_->detectAndCompute(ctx->frame, cv::noArray(),
                                ctx->orb_result.emplace().keypoints,
                                ctx->orb_result->descriptors);
         ctx->flags.has_keypoints = true;
 
+        picture_db_->refresh(orb_);
 
-    // Retrieve current sets of keypoints and descruotirs
+        const auto& descriptorslist = picture_db_->descriptors();
 
-    //Run through each pair through detection
-        //BF matching
-        
-        //If detection is valid, break current loop and pass the ctx to the router
+        if (descriptorslist.empty() || ctx->orb_result->descriptors.empty()) {
+            ctx->flags.drop_frame = true;
+            return;
+        }
 
+        cv::BFMatcher matcher(cv::NORM_HAMMING);
 
+        // Run BF matching against each reference picture in the DB
+        for (size_t i = 0; i < descriptorslist.size(); ++i) {
+            if (descriptorslist[i].empty()) continue;
+
+            std::vector<std::vector<cv::DMatch>> knn_matches;
+            matcher.knnMatch(ctx->orb_result->descriptors, descriptorslist[i], knn_matches, 2);
+
+            // Lowe's ratio test
+            std::vector<cv::DMatch> good_matches;
+            std::vector<cv::DMatch> raw_matches;
+            for (auto& m : knn_matches) {
+                if (!m.empty()) raw_matches.push_back(m[0]);
+                if (m.size() == 2 && m[0].distance < 0.75f * m[1].distance)
+                    good_matches.push_back(m[0]);
+            }
+
+            if (static_cast<int>(good_matches.size()) >= min_matches_) {
+                ctx->matching_result.emplace();
+                ctx->matching_result->matches     = std::move(good_matches);
+                ctx->matching_result->raw_matches = std::move(raw_matches);
+                ctx->flags.has_matches = true;
+                dispatch(ctx);
+                return;
+            }
+        }
+
+        // No reference picture matched well enough
+        ctx->flags.has_matches = false;
     }
-        
+
 
 private:
     cv::Ptr<cv::ORB> orb_;
     int n_features_;
+    int min_matches_;
     std::shared_ptr<PictureDB> picture_db_;
     std::filesystem::path picture_db_path_;
-}; 
+};

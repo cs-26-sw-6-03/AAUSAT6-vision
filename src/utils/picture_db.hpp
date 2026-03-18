@@ -31,6 +31,10 @@ private:
     // in the keypoints_ and descriptors_ vectors.
     std::map<std::filesystem::path, size_t> file_index_map_;
 
+    // Snapshot of {path -> mtime} from the last refresh.
+    // Used as a fast-path: if the directory contents are unchanged, refresh returns immediately.
+    std::map<std::filesystem::path, std::filesystem::file_time_type> file_mtime_map_;
+
     std::vector<std::vector<cv::KeyPoint>> keypoints_;
     std::vector<cv::Mat> descriptors_;
 };
