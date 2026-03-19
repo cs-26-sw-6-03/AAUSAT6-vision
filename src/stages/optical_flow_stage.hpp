@@ -7,6 +7,7 @@ class OpticalFlowStage : public ThreadedStage
 public:
     OpticalFlowStage(std::shared_ptr<Router> router, const Config &cfg)
         : ThreadedStage("OpticalFlow", std::move(router), cfg.get<int>("pipeline.queue_size", 32))
+        , max_corners_(cfg.get<int>("max_corners", 200))
     {
     }
 
@@ -85,7 +86,7 @@ public:
                 currFiltered.push_back(curr_pts[i]);
             }
 
-            if (prevFiltered.size() < 200)
+            if (prevFiltered.size() < max_corners_)
             {
 
                 std::vector<cv::KeyPoint> kps;
@@ -127,7 +128,5 @@ private:
     cv::Mat prev_gray_;
     cv::Mat prev_desc_;
     cv::Point2f prev_detection_center = cv::Point2f(-1, -1);
-
-    std::string source_;
-    bool        loop_;
+    int max_corners_ = 0;
 };
