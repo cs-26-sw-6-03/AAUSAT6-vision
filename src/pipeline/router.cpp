@@ -55,6 +55,8 @@ std::string Router::default_route(const FrameContext& ctx) const {
     if (f.needs_redetect)   return "orb";
     if (f.from_input)       return "optical_flow";
 
+ 
+
     // Output only
     /* if (f.drop_frame)      return "";
     if (f.skip_processing) return "output";
