@@ -2,6 +2,5 @@
   "cmake.buildDirectory": "${workspaceFolder}/build/${buildType}",
   "cmake.configureArgs": [
     "-DBUILD_TESTS=ON"
-  ],
-  "C_Cpp.errorSquiggles": "disabled"
+  ]
 }
