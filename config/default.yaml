@@ -33,10 +33,16 @@ pose:
   enabled: true
 
 output:
-  gstreamer_pipeline: "appsrc ! videoconvert ! autovideosink"
-  width: 1280
-  height: 720
+  #gstreamer_pipeline: "appsrc ! videoconvert ! autovideosink"
+  width: 1920
+  height: 1080
   fps: 30
+  mode: "file"
+  file:
+    path: "output.mp4"
+    encoder: "x264enc"
+    muxer: "mp4mux"
+
 
 db:
   path: "data/keypoints.db"
