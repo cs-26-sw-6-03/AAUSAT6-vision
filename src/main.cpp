@@ -7,12 +7,12 @@
 
 // --- Stages (uncomment as they are implemented) ---
 #include "stages/capture_stage.hpp"
-// #include "stages/optical_flow_stage.hpp"
+#include "stages/optical_flow_stage.hpp"
 // #include "stages/orb_stage.hpp"
 // #include "stages/matching_stage.hpp"
 // #include "stages/ransac_stage.hpp"
 // #include "stages/pose_stage.hpp"
-// #include "stages/output_stage.hpp"
+#include "stages/output_stage.hpp"
  
 static std::atomic<bool> g_shutdown{false};
  
@@ -46,12 +46,12 @@ int main(int argc, char* argv[]) {
     // Uncomment and replace stubs as stages are implemented.
  
     pipeline.add_stage(std::make_shared<CaptureStage>     (pipeline.router(), cfg));
-    // pipeline.add_stage(std::make_shared<OpticalFlowStage> (pipeline.router(), cfg));
+    pipeline.add_stage(std::make_shared<OpticalFlowStage> (pipeline.router(), cfg));
     // pipeline.add_stage(std::make_shared<OrbStage>         (pipeline.router(), cfg));
     // pipeline.add_stage(std::make_shared<MatchingStage>    (pipeline.router(), cfg));
     // pipeline.add_stage(std::make_shared<RansacStage>      (pipeline.router(), cfg));
     // pipeline.add_stage(std::make_shared<PoseStage>        (pipeline.router(), cfg));
-    // pipeline.add_stage(std::make_shared<OutputStage>      (pipeline.router(), cfg));
+    pipeline.add_stage(std::make_shared<OutputStage>      (pipeline.router(), cfg));
  
     pipeline.start();
  
