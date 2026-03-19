@@ -43,7 +43,9 @@ bool Router::dispatch(std::shared_ptr<FrameContext> ctx) {
 //                orb -> matching -> ransac -> pose -> output
 std::string Router::default_route(const FrameContext& ctx) const {
     const auto& f = ctx.flags;
- 
+
+    // Full pipeline routing - the gist of it
+    // TODO: revist
     if (f.drop_frame)       return "";
     if (f.skip_processing)  return "output";
     if (f.has_pose)         return "output";
@@ -54,5 +56,13 @@ std::string Router::default_route(const FrameContext& ctx) const {
     if (f.needs_redetect)   return "orb";
 
  
+
+    // Output only
+    /* if (f.drop_frame)      return "";
+    if (f.skip_processing) return "output";
+    if (f.from_input)      return "output";
+    if (f.has_pose)        return "output"; */
+
+    // All other stages are skipped
     return "";
 }

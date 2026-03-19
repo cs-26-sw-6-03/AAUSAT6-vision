@@ -1,0 +1,7 @@
+input:
+    source: "/home/sebas/git/hub/cs-26-sw-6-03/Untitled.mp4"
+output:
+    mode: "file"
+    crop: true
+    file:
+        path: "/home/sebas/git/hub/cs-26-sw-6-03/output.mp4"
