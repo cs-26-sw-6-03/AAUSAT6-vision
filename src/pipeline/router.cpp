@@ -52,8 +52,8 @@ std::string Router::default_route(const FrameContext& ctx) const {
     if (f.has_inliers)      return "pose";
     if (f.has_matches)      return "ransac";
     if (f.has_keypoints)    return "matching";
-    if (f.from_input)       return "optical_flow";
     if (f.needs_redetect)   return "orb";
+    if (f.from_input)       return "optical_flow";
 
  
 
