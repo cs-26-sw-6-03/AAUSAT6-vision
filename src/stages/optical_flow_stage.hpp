@@ -6,9 +6,7 @@ class OpticalFlowStage : public ThreadedStage
 {
 public:
     OpticalFlowStage(std::shared_ptr<Router> router, const Config &cfg)
-        : ThreadedStage("orb", router, cfg.get<int>("pipeline.queue_size", 32))
-        , source_(cfg.require<std::string>("input.source"))
-        , loop_(cfg.get<bool>("input.loop", false))
+        : ThreadedStage("OpticalFlow", router, cfg.get<int>("pipeline.queue_size", 32))
     {
     }
 
