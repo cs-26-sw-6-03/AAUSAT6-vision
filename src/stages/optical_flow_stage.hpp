@@ -6,7 +6,7 @@ class OpticalFlowStage : public ThreadedStage
 {
 public:
     OpticalFlowStage(std::shared_ptr<Router> router, const Config &cfg)
-        : ThreadedStage("OpticalFlow", router, cfg.get<int>("pipeline.queue_size", 32))
+        : ThreadedStage("OpticalFlow", std::move(router), cfg.get<int>("pipeline.queue_size", 32))
     {
     }
 
@@ -18,7 +18,6 @@ public:
     prev_gray_.release();
     prev_kps_.clear();
     prev_desc_.release();
-
     }
 
     void process(std::shared_ptr<FrameContext> ctx) override
