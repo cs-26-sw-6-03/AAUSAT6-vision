@@ -18,7 +18,6 @@ public:
     prev_gray_.release();
     prev_kps_.clear();
     prev_desc_.release();
-
     }
 
     void process(std::shared_ptr<FrameContext> ctx) override
