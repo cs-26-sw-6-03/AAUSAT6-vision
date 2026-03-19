@@ -41,6 +41,8 @@ struct OpticalFlowResult {
 struct OrbResult {
     std::vector<cv::KeyPoint> keypoints;
     cv::Mat                   descriptors; // See docs for cv::Mat descriptor format
+    std::vector<cv::KeyPoint> object_keypoints;
+    cv::Mat                   object_descriptors;
 };
 
 // Matching result struct

@@ -57,6 +57,8 @@ public:
                 ctx->matching_result->matches     = std::move(good_matches);
                 ctx->matching_result->raw_matches = std::move(raw_matches);
                 ctx->flags.has_matches = true;
+                ctx->orb_result->object_descriptors = descriptorslist[i];
+                ctx->orb_result->object_keypoints = picture_db_->keypoints()[i];
                 dispatch(ctx);
                 return;
             }
