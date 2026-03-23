@@ -2,7 +2,7 @@
 #include <csignal>
 #include <atomic>
 
-#include "utils/config.hpp"
+
 #include "pipeline/pipeline.hpp"
 
 // --- Stages (uncomment as they are implemented) ---
@@ -12,6 +12,7 @@
 // #include "stages/matching_stage.hpp"
 // #include "stages/ransac_stage.hpp"
 // #include "stages/pose_stage.hpp"
+#include "stages/ed_ransac_stage.hpp"
 #include "stages/output_stage.hpp"
  
 static std::atomic<bool> g_shutdown{false};
