@@ -10,7 +10,6 @@
 #include "stages/optical_flow_stage.hpp"
 #include "stages/orb_stage.hpp"
 // #include "stages/matching_stage.hpp"
-// #include "stages/ransac_stage.hpp"
 // #include "stages/pose_stage.hpp"
 #include "stages/ed_ransac_stage.hpp"
 #include "stages/output_stage.hpp"
