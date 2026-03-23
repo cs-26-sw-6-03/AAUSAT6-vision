@@ -68,6 +68,8 @@ struct PoseResult {
     cv::Mat rotation;       // 3x3 rotation matrix
     cv::Mat translation;    // 3x1 translation vector
     bool    valid = false;
+    cv::Point2f center;
+    float confidence = 0.f;
 };
 
 

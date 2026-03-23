@@ -33,6 +33,7 @@ pose:
   enabled: true
   MIN_GOOD_MATCHES: 8 
   ALPHA: 0.4f
+  lastvalid: false
 
 output:
   #gstreamer_pipeline: "appsrc ! videoconvert ! autovideosink"

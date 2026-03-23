@@ -26,11 +26,13 @@ public:
 
         if (!ctx->flags.has_keypoints)
         {
+            ctx->flags.needs_redetect = true;
             return;
         }
 
         if ((int)ctx->matching_result->matches.size() < MIN_GOOD_MATCHES_)
         {
+            ctx->flags.needs_redetect = true;
             return;
         }
 
@@ -66,11 +68,21 @@ public:
         {
             return;
         }
+        if(ctx->pose_result->valid) {
+            smoothedCenter = detectedCenter;
+        } else {
+            smoothedCenter = ALPHA_ * detectedCenter + (1.f - ALPHA_) * smoothedCenter;
+        }
 
+        ctx->pose_result->center = smoothedCenter;
+        ctx->pose_result->valid = true;
+        ctx->pose_result->confidence = (float)inlierCount / ctx->matching_result->matches.size();
+        return;
         
     }
 
 private:
     int MIN_GOOD_MATCHES_;
     float ALPHA_;
+    Point2f smoothedCenter;
 };
