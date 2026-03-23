@@ -32,6 +32,7 @@ ransac:
 pose:
   enabled: true
   MIN_GOOD_MATCHES: 8 
+  ALPHA: 0.4f
 
 output:
   #gstreamer_pipeline: "appsrc ! videoconvert ! autovideosink"
