@@ -59,6 +59,7 @@ Experiment overlays are merged on top of the base config. See `config/default.ya
 
 **pose**
 - `pose.enabled` (default: `true`) — enable pose estimation from homography inliers
+- `MIN_GOOD_MATCHES` (default: `8`) - Minimum number of good mathches requiered
 
 **output**
 - `output.gstreamer_pipeline` (default: `"appsrc ! videoconvert ! autovideosink"`) — GStreamer sink pipeline
