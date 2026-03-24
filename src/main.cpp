@@ -48,9 +48,8 @@ int main(int argc, char* argv[]) {
     pipeline.add_stage(std::make_shared<CaptureStage>     (pipeline.router(), cfg));
     pipeline.add_stage(std::make_shared<OpticalFlowStage> (pipeline.router(), cfg));
     pipeline.add_stage(std::make_shared<OrbStage>         (pipeline.router(), cfg));
-    // pipeline.add_stage(std::make_shared<MatchingStage>    (pipeline.router(), cfg));
-    // pipeline.add_stage(std::make_shared<RansacStage>      (pipeline.router(), cfg));
     // pipeline.add_stage(std::make_shared<PoseStage>        (pipeline.router(), cfg));
+    pipeline.add_stage(std::make_shared<EdRansacStage>      (pipeline.router(), cfg));
     pipeline.add_stage(std::make_shared<OutputStage>      (pipeline.router(), cfg));
  
     pipeline.start();

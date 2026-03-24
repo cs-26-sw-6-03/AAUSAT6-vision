@@ -9,7 +9,7 @@ class EdRansacStage : public ThreadedStage
 {
 public:
     EdRansacStage(std::shared_ptr<Router> router, const Config &cfg)
-        : ThreadedStage("EdRansac", std::move(router), cfg.get<int>("pipeline.queue_size", 32))
+        : ThreadedStage("ransac", std::move(router), cfg.get<int>("pipeline.queue_size", 32))
     {
         lowe_ratio           = cfg.get<float>("stabilizer.lowe_ratio", 0.75f);
         ransac_reproj_thresh = cfg.get<float>("stabilizer.reprojection_threshold", 3.0);
