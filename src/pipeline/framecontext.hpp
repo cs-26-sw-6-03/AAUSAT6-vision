@@ -46,6 +46,7 @@ struct OrbResult {
     cv::Mat                   descriptors; // See docs for cv::Mat descriptor format
     std::vector<cv::KeyPoint> object_keypoints;
     cv::Mat                   object_descriptors;
+    cv::Size                  object_size;  // Reference image dimensions (for projecting center through H)
 };
 
 // Matching result struct
