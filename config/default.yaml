@@ -31,9 +31,11 @@ ransac:
 
 pose:
   enabled: true
-  MIN_GOOD_MATCHES: 8 
-  ALPHA: 0.4f
+  MIN_GOOD_MATCHES: 8
+  ALPHA: 0.4
   lastvalid: false
+  crop_width: 1920       # Pixels. 0 = disabled. Must be smaller than source width.
+  crop_height: 1080      # Pixels. 0 = disabled. Must be smaller than source height.
 
 output:
   #gstreamer_pipeline: "appsrc ! videoconvert ! autovideosink"

@@ -1,2 +1,5 @@
 input:
-    source: "/home/digita/Downloads/Untitled.mp4"
+    source: "/home/digita/projects/AAUSAT6-C-/Untitled.mp4"
+
+orb:
+  n_features: 500
