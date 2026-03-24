@@ -41,6 +41,8 @@ struct OpticalFlowResult {
 struct OrbResult {
     std::vector<cv::KeyPoint> keypoints;
     cv::Mat                   descriptors; // See docs for cv::Mat descriptor format
+    std::vector<cv::KeyPoint> object_keypoints;
+    cv::Mat                   object_descriptors;
 };
 
 // Matching result struct
@@ -66,6 +68,8 @@ struct PoseResult {
     cv::Mat rotation;       // 3x3 rotation matrix
     cv::Mat translation;    // 3x1 translation vector
     bool    valid = false;
+    cv::Point2f center;
+    float confidence = 0.f;
 };
 
 

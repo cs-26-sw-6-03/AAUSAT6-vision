@@ -18,7 +18,6 @@ public:
     prev_gray_.release();
     prev_kps_.clear();
     prev_desc_.release();
-
     }
 
     void process(std::shared_ptr<FrameContext> ctx) override
@@ -44,8 +43,6 @@ public:
             prev_desc_ = curr_desc;
             prevGray = gray.clone();
 
-            ctx->optical_flow_result->points_curr = curr_pts;
-            ctx->optical_flow_result->points_prev = prev_pts_;
             ctx->frame = FrameMat;
             ++frame_idx_;
         }
@@ -86,7 +83,7 @@ public:
                 currFiltered.push_back(curr_pts[i]);
             }
 
-            if (prevFiltered.size() < 200)
+            if (prevFiltered.size() < max_corners_)
             {
 
                 std::vector<cv::KeyPoint> kps;
@@ -128,7 +125,5 @@ private:
     cv::Mat prev_gray_;
     cv::Mat prev_desc_;
     cv::Point2f prev_detection_center = cv::Point2f(-1, -1);
-
-    std::string source_;
-    bool        loop_;
+    int max_corners_ = 0;
 };
