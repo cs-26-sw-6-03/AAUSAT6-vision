@@ -44,8 +44,6 @@ public:
             prev_desc_ = curr_desc;
             prevGray = gray.clone();
 
-            ctx->optical_flow_result->points_curr = curr_pts;
-            ctx->optical_flow_result->points_prev = prev_pts_;
             ctx->frame = FrameMat;
             ++frame_idx_;
         }
