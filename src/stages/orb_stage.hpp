@@ -1,17 +1,23 @@
+#pragma once
+
 #include "../pipeline/threadedstage.hpp"
 #include "../utils/config.hpp"
 #include "../utils/picture_db.hpp"
 #include <opencv2/videoio.hpp>
+#include <atomic>
+#include <memory>
 #include <stdexcept>
 #include <string>
 
 class OrbStage : public ThreadedStage {
 public:
-    OrbStage(std::shared_ptr<Router> router, const Config& cfg)
+    OrbStage(std::shared_ptr<Router> router, const Config& cfg,
+             std::shared_ptr<std::atomic<bool>> active_mode)
         : ThreadedStage("orb", std::move(router), cfg.get<int>("pipeline.queue_size", 32))
         , n_features_(cfg.get<int>("orb.n_features", 1000))
         , min_matches_(cfg.get<int>("orb.min_matches", 10))
         , picture_db_path_(std::filesystem::path(cfg.get<std::string>("pictures.path", "/tmp/vision")))
+        , active_(std::move(active_mode))
         {}
 
     void init() override {
@@ -20,6 +26,15 @@ public:
     }
 
     void process(std::shared_ptr<FrameContext> ctx) override {
+        ctx->flags.from_input = false;
+
+        // Passive mode: pass frame through without detection
+        if (!active_->load()) {
+            ctx->flags.has_keypoints = true;
+            return;
+        }
+
+        // Active mode: detect keypoints and match against reference DB
         orb_->detectAndCompute(ctx->frame, cv::noArray(),
                                ctx->orb_result.emplace().keypoints,
                                ctx->orb_result->descriptors);
@@ -30,7 +45,8 @@ public:
         const auto& descriptorslist = picture_db_->descriptors();
 
         if (descriptorslist.empty() || ctx->orb_result->descriptors.empty()) {
-            ctx->flags.drop_frame = true;
+            // No DB or no descriptors — proceed without matches
+            ctx->flags.has_matches = false;
             return;
         }
 
@@ -57,7 +73,6 @@ public:
                 ctx->matching_result->matches     = std::move(good_matches);
                 ctx->matching_result->raw_matches = std::move(raw_matches);
                 ctx->flags.has_matches = true;
-                dispatch(ctx);
                 return;
             }
         }
@@ -73,4 +88,5 @@ private:
     int min_matches_;
     std::shared_ptr<PictureDB> picture_db_;
     std::filesystem::path picture_db_path_;
+    std::shared_ptr<std::atomic<bool>> active_;
 };
