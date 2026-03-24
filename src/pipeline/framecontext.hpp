@@ -15,16 +15,19 @@
 #include <cstdint>
 #include <string>
 
-// Routing flags: set by stages. Signals what the next stage should do.
+// Routing flags: set by stages to control where the frame goes next.
+// Pipeline order: capture -> orb -> optical_flow -> pose -> ransac -> output
 struct RoutingFlags {
-    bool from_input       = false;    // Frame just captured - route to first processing stage - route to optical_flow
-    bool needs_redetect   = false;    // Optical flow lost tracking - run ORB
-    bool has_keypoints    = false;    // ORB stage completed
-    bool has_matches      = false;    // Matching stage completed
-    bool has_inliers      = false;    // RANSAC stage completed
-    bool has_pose         = false;    // Pose estimation completed
-    bool skip_processing  = false;    // Tracking was good - go straight to output
-    bool drop_frame       = false;    // Frame is unusable - discard
+    bool from_input       = false;    // Fresh from capture              -> route to "orb"
+    bool has_keypoints    = false;    // ORB done (active or passive)    -> route to "optical_flow"
+    bool skip_processing  = false;    // Optical flow done               -> route to "pose"
+    bool has_pose         = false;    // Pose done                       -> route to "ransac"
+    bool has_inliers      = false;    // RANSAC done                     -> route to "output"
+    bool drop_frame       = false;    // Frame is unusable               -> discard
+
+    // Informational only (not used for routing)
+    bool needs_redetect   = false;    // Optical flow lost tracking — ORB switched to active
+    bool has_matches      = false;    // ORB active mode found DB matches
 };
 
 // Optical flow result struct
