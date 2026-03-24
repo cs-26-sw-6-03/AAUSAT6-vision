@@ -31,7 +31,7 @@ public:
     void process(std::shared_ptr<FrameContext> ctx) override
     {
         if (!ctx->orb_result.has_value()) {
-            dispatch(ctx);
+            ctx->flags.has_inliers = true;  // pass-through: route to output
             return;
         }
 
@@ -45,7 +45,8 @@ public:
             prev_desc_   = curr_desc.clone();
             initialized_ = true;
             ++frame_idx_;
-            dispatch(ctx);
+            ctx->flags.has_pose    = false;
+            ctx->flags.has_inliers = true;
             return;
         }
 
@@ -107,7 +108,6 @@ public:
         prev_desc_ = curr_desc.clone();
 
         ++frame_idx_;
-        dispatch(ctx);
     }
 
 private:
