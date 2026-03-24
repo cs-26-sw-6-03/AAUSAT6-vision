@@ -113,22 +113,6 @@ public:
 
         cv::Mat frame = ctx->frame; // make alias for frame in context (we do not like hte -> syntax)
 
-        // Crop or resize to configured output dimensions if set.
-        // TODO: NEEDS REFACTOR, CROPPING SHOULD BE BEFORE DISPATCHING TO THIS STAGE, BUT THAT IS NOT IMPLEMENTED YET!
-        if (width_ > 0 && height_ > 0 &&
-            (frame.cols != width_ || frame.rows != height_)) {
-            if (crop_ && frame.cols >= width_ && frame.rows >= height_) {
-                // Center crop to the requested width/height
-                int x = (frame.cols - width_) / 2;
-                int y = (frame.rows - height_) / 2;
-                cv::Rect roi(x, y, width_, height_);
-                frame = frame(roi).clone();
-            } else {
-                // Fallback: resize (also used when requested size is larger than input)
-                cv::resize(frame, frame, cv::Size(width_, height_));
-            }
-        }
-
         // IMPORTANT
         // latch the width and height on the actual frame and configure teh appsrc and caps + start the pipeline from the first frame
         // This should hopefully remove the FRAMDATA ONLY BEING ONE FREAKING PIXEL TALL issue
