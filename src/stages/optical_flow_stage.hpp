@@ -6,8 +6,7 @@ class OpticalFlowStage : public ThreadedStage
 {
 public:
     OpticalFlowStage(std::shared_ptr<Router> router, const Config &cfg)
-        : ThreadedStage("OpticalFlow", std::move(router), cfg.get<int>("pipeline.queue_size", 32))
-        , max_corners_(cfg.get<int>("max_corners", 200))
+        : ThreadedStage("optical_flow", std::move(router), cfg.get<int>("pipeline.queue_size", 32))
     {
     }
 

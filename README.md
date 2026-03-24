@@ -50,11 +50,12 @@ Experiment overlays are merged on top of the base config. See `config/default.ya
 - `matching.hamming_ratio_test` (default: `0.75`) — Lowe's ratio test threshold; lower is stricter
 - `matching.cross_check` (default: `false`) — only keep matches consistent in both directions
 
-**ransac**
-- `ransac.method` (default: `EG_RANSAC`) — homography method: `RANSAC`, `EG_RANSAC`, `USAC_MAGSAC`
-- `ransac.reproj_threshold` (default: `3.0`) — max reprojection error in pixels to count as inlier
-- `ransac.confidence` (default: `0.99`) — confidence level for termination
-- `ransac.max_iterations` (default: `2000`) — max RANSAC iterations
+**ed-ransac**
+- `stabilizer.lowe_ratio` (default: `0.75`) — Lowe's ratio test threshold for feature matching
+- `stabilizer.reprojection_threshold` (default: `3.0`) — RANSAC reprojection error threshold in pixels
+- `stabilizer.ed_threshold` (default: `0.5`) — edge detection threshold in pixels
+- `stabilizer.min_inlies` (default: `10`) — minimum inliers required for a valid transform
+- `stabilizer.smooth_radius` (default: `15`) — number of trailing frames used for trajectory smoothing
 
 **pose**
 - `pose.enabled` (default: `true`) — enable pose estimation from homography inliers
