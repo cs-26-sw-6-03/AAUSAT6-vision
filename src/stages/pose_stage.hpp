@@ -1,3 +1,5 @@
+#pragma once
+
 #include "../pipeline/threadedstage.hpp"
 #include "../utils/config.hpp"
 #include <vector>
