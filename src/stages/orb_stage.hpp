@@ -35,7 +35,9 @@ public:
         }
 
         // Active mode: detect keypoints and match against reference DB
-        orb_->detectAndCompute(ctx->frame, cv::noArray(),
+        cv::Mat gray;
+        cv::cvtColor(ctx->frame, gray, cv::COLOR_BGR2GRAY);
+        orb_->detectAndCompute(gray, cv::noArray(),
                                ctx->orb_result.emplace().keypoints,
                                ctx->orb_result->descriptors);
         ctx->flags.has_keypoints = true;
@@ -72,6 +74,8 @@ public:
                 ctx->matching_result.emplace();
                 ctx->matching_result->matches     = std::move(good_matches);
                 ctx->matching_result->raw_matches = std::move(raw_matches);
+                ctx->orb_result->object_keypoints = picture_db_->keypoints()[i];
+                ctx->orb_result->object_size      = picture_db_->sizes()[i];
                 ctx->flags.has_matches = true;
                 return;
             }
