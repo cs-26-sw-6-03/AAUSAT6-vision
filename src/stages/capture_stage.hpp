@@ -37,7 +37,6 @@ protected:
     // Override the worker loop entirely: produce frames instead of consuming queue
     void run() override {
         uint64_t frame_id = 0;
-        cv::Mat  prev_frame;
 
         while (is_running()) {
             cv::VideoCapture cap = open_source();
@@ -53,9 +52,7 @@ protected:
                 }
 
                 ctx->frame_id        = frame_id++;
-                ctx->frame_prev      = prev_frame;
                 ctx->flags.from_input = true;
-                prev_frame           = ctx->frame.clone();
 
                 router()->dispatch(std::move(ctx));
             }

@@ -2,7 +2,7 @@
 #include <csignal>
 #include <atomic>
 
-
+#include <opencv2/core.hpp>
 #include "pipeline/pipeline.hpp"
 
 // --- Stages ---
@@ -36,6 +36,10 @@ int main(int argc, char* argv[]) {
     // --- Signal handling ---
     std::signal(SIGINT,  signal_handler);
     std::signal(SIGTERM, signal_handler);
+
+    // Disable OpenCV's internal thread pools — the pipeline already runs one thread per stage,
+    // so OpenCV workers would only cause over-subscription and cache thrashing.
+    cv::setNumThreads(1);
 
     // --- Build pipeline ---
     Pipeline pipeline(cfg);

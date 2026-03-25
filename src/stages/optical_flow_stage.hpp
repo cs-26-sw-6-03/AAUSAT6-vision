@@ -19,7 +19,6 @@ public:
 
     void init() override
     {
-        prevGray.release();
         prev_gray_.release();
         prev_pts_.clear();
         frame_idx_ = 0;
@@ -43,10 +42,9 @@ public:
         ctx->flags.skip_processing = true;
 
         // No previous frame yet — store gray and pass through
-        if (prevGray.empty() || prev_pts_.empty())
+        if (prev_gray_.empty() || prev_pts_.empty())
         {
             prev_gray_ = gray.clone();
-            prevGray   = gray.clone();
             ++frame_idx_;
             return;
         }
@@ -95,15 +93,13 @@ public:
             }
         }
 
-        prev_gray_ = gray.clone();
-        prevGray   = gray.clone();
+        gray.copyTo(prev_gray_);
         ++frame_idx_;
     }
 
 private:
     std::shared_ptr<std::atomic<bool>> orb_active_;
 
-    cv::Mat                  prevGray;
     cv::Mat                  prev_gray_;
     std::vector<cv::Point2f> prev_pts_;
     size_t                   frame_idx_        = 0;

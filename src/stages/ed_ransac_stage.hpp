@@ -42,7 +42,7 @@ public:
         if (!initialized_ || prev_desc_.empty()) {
             trajectory_.push_back(cv::Mat::eye(3, 3, CV_64F));
             prev_kps_    = curr_kps;
-            prev_desc_   = curr_desc.clone();
+            curr_desc.copyTo(prev_desc_);
             initialized_ = true;
             ++frame_idx_;
             ctx->flags.has_pose    = false;
@@ -83,9 +83,11 @@ public:
         // Accumulate trajectory: T[i] = H_inter(i-1→i) * T[i-1]
         cv::Mat T_curr = H_inter * trajectory_.back();
         trajectory_.push_back(T_curr.clone());
+        if ((int)trajectory_.size() > smooth_radius + 1)
+            trajectory_.erase(trajectory_.begin());
 
         // Smoothed trajectory (causal trailing-window average)
-        cv::Mat T_smooth = smooth_transform(frame_idx_);
+        cv::Mat T_smooth = smooth_transform();
 
         // Correction warp: what to apply to the raw frame
         cv::Mat warp = T_smooth * T_curr.inv();
@@ -173,19 +175,15 @@ private:
         return cv::findHomography(ed_prev, ed_curr, 0);
     }
 
-    // Causal trailing-window average over the last smooth_radius trajectory entries
-    cv::Mat smooth_transform(std::size_t idx) const
+    // Causal trailing-window average over all retained trajectory entries
+    cv::Mat smooth_transform() const
     {
-        int from  = std::max(0, (int)idx - smooth_radius);
-        int to    = (int)idx;
+        if (trajectory_.empty()) return cv::Mat::eye(3, 3, CV_64F);
 
         cv::Mat sum = cv::Mat::zeros(3, 3, CV_64F);
-        int count = 0;
-        for (int i = from; i <= to && i < (int)trajectory_.size(); ++i) {
-            sum += trajectory_[i];
-            ++count;
-        }
+        for (const auto& T : trajectory_)
+            sum += T;
 
-        return count > 0 ? sum / (double)count : cv::Mat::eye(3, 3, CV_64F);
+        return sum / (double)trajectory_.size();
     }
 };

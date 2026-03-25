@@ -35,7 +35,7 @@ target_link_libraries(vision_common INTERFACE
 )
 target_compile_options(vision_common INTERFACE
     -Wall -Wextra -Wpedantic
-    $<$<CONFIG:Release>:-O2>
+    $<$<CONFIG:Release>:-O3 -march=native>
     $<$<CONFIG:Debug>:-g -O0>
 )
 target_link_directories(vision_common INTERFACE
