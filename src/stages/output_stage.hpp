@@ -48,8 +48,8 @@
 
 class OutputStage : public ThreadedStage {
 public:
-    OutputStage(std::shared_ptr<Router> router, const Config& cfg)
-        : ThreadedStage("output", std::move(router), cfg.get<int>("pipeline.queue_size", 32))
+    OutputStage(std::shared_ptr<Router> router, const Config& cfg, int cpu_affinity = -1)
+        : ThreadedStage("output", std::move(router), cfg.get<int>("pipeline.queue_size", 32), cpu_affinity)
         , mode_(cfg.require<std::string>("output.mode"))
         , fps_(cfg.get<int>("output.fps", 30))
         , bitrate_(cfg.get<int>("output.bitrate", 2000))

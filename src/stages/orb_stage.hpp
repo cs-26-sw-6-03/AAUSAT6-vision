@@ -15,8 +15,8 @@
 class OrbStage : public ThreadedStage {
 public:
     OrbStage(std::shared_ptr<Router> router, const Config& cfg,
-             std::shared_ptr<std::atomic<bool>> active_mode)
-        : ThreadedStage("orb", std::move(router), cfg.get<int>("pipeline.queue_size", 32))
+             std::shared_ptr<std::atomic<bool>> active_mode, int cpu_affinity = -1)
+        : ThreadedStage("orb", std::move(router), cfg.get<int>("pipeline.queue_size", 32), cpu_affinity)
         , n_features_(cfg.get<int>("orb.n_features", 1000))
         , min_matches_(cfg.get<int>("orb.min_matches", 10))
         , picture_db_path_(std::filesystem::path(cfg.get<std::string>("pictures.path", "/tmp/vision")))

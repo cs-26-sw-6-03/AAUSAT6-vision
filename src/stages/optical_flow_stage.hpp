@@ -10,8 +10,8 @@ class OpticalFlowStage : public ThreadedStage
 {
 public:
     OpticalFlowStage(std::shared_ptr<Router> router, const Config &cfg,
-                     std::shared_ptr<std::atomic<bool>> orb_active)
-        : ThreadedStage("optical_flow", std::move(router), cfg.get<int>("pipeline.queue_size", 32))
+                     std::shared_ptr<std::atomic<bool>> orb_active, int cpu_affinity = -1)
+        : ThreadedStage("optical_flow", std::move(router), cfg.get<int>("pipeline.queue_size", 32), cpu_affinity)
         , orb_active_(std::move(orb_active))
         , min_tracking_pts_(cfg.get<int>("optical_flow.min_tracking_pts", 200))
     {
