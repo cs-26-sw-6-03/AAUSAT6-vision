@@ -7,8 +7,10 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
+#include <mutex>
 #include <stdexcept>
 #include <string>
+#include <thread>
 
 class OrbStage : public ThreadedStage {
 public:
@@ -26,7 +28,30 @@ public:
         orb_ = cv::ORB::create(n_features_);
         matcher_ = cv::BFMatcher(cv::NORM_HAMMING);
         picture_db_ = std::make_shared<PictureDB>(picture_db_path_);
-        last_refresh_ = std::chrono::steady_clock::time_point{};  // force refresh on first frame
+        // Do an initial synchronous refresh so the first frame has a populated DB
+        picture_db_->refresh(orb_);
+
+        refresh_running_ = true;
+        refresh_thread_ = std::thread([this] {
+            while (refresh_running_) {
+                std::this_thread::sleep_for(refresh_interval_);
+                if (!refresh_running_) break;
+
+                // Build and populate a new DB off the hot path
+                auto staging = std::make_shared<PictureDB>(picture_db_path_);
+                staging->refresh(orb_);
+
+                // Swap in under lock — frame processing only holds this lock briefly
+                std::lock_guard<std::mutex> lock(db_mutex_);
+                picture_db_ = std::move(staging);
+            }
+        });
+    }
+
+    void shutdown() override {
+        refresh_running_ = false;
+        if (refresh_thread_.joinable())
+            refresh_thread_.join();
     }
 
     void process(std::shared_ptr<FrameContext> ctx) override {
@@ -46,12 +71,7 @@ public:
                                ctx->orb_result->descriptors);
         ctx->flags.has_keypoints = true;
 
-        auto now = std::chrono::steady_clock::now();
-        if (now - last_refresh_ >= refresh_interval_) {
-            picture_db_->refresh(orb_);
-            last_refresh_ = now;
-        }
-
+        std::lock_guard<std::mutex> lock(db_mutex_);
         const auto& descriptorslist = picture_db_->descriptors();
 
         if (descriptorslist.empty() || ctx->orb_result->descriptors.empty()) {
@@ -100,6 +120,9 @@ private:
     std::shared_ptr<PictureDB> picture_db_;
     std::filesystem::path picture_db_path_;
     std::chrono::seconds refresh_interval_;
-    std::chrono::steady_clock::time_point last_refresh_;
     std::shared_ptr<std::atomic<bool>> active_;
+
+    std::mutex db_mutex_;
+    std::thread refresh_thread_;
+    std::atomic<bool> refresh_running_{false};
 };
