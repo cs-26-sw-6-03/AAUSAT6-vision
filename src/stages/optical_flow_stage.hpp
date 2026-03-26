@@ -53,7 +53,7 @@ public:
         std::vector<cv::Point2f> curr_pts;
         std::vector<uchar>       status;
         std::vector<float>       err;
-        cv::calcOpticalFlowPyrLK(prev_gray_, gray, prev_pts_, curr_pts, status, err);
+        cv::calcOpticalFlowPyrLK(prev_gray_, gray, prev_pts_, curr_pts, status, err, cv::Size(21, 21), 3, cv::TermCriteria((cv::TermCriteria::COUNT + cv::TermCriteria::EPS), 30, 0.01), 0);
 
         auto& result = ctx->optical_flow_result.emplace();
 
