@@ -51,7 +51,8 @@ public:
     OutputStage(std::shared_ptr<Router> router, const Config& cfg)
         : ThreadedStage("output", std::move(router), cfg.get<int>("pipeline.queue_size", 32))
         , mode_(cfg.require<std::string>("output.mode"))
-        , fps_(cfg.get<int>("output.fps", 30)) // default 30 fps
+        , fps_(cfg.get<int>("output.fps", 30))
+        , bitrate_(cfg.get<int>("output.bitrate", 2000))
         , width_(cfg.get<int>("output.width", 0)) // default: use input
         , height_(cfg.get<int>("output.height", 0)) // default: use input
         , crop_(cfg.get<bool>("output.crop", false))
@@ -229,11 +230,11 @@ private:
         }
 
         if (mode_ == "file") {
-            p << " ! " << file_encoder_;
+            p << " ! " << file_encoder_ << " bitrate=" << bitrate_;
             p << " ! " << file_muxer_;
             p << " ! filesink location=\"" << file_path_ << "\"";
         } else {
-            p << " ! " << rtp_encoder_ << " tune=zerolatency"; // low-latency=true for vpuenc_h264-specific low-latency tuning
+            p << " ! " << rtp_encoder_ << " bitrate=" << bitrate_ << " tune=zerolatency";
             p << " ! rtph264pay"; // // config-interval=1 pt=96
             p << " ! udpsink host=" << rtp_host_ << " port=" << rtp_port_;
         }
@@ -244,10 +245,10 @@ private:
     // Config
     std::string mode_; // file or rtp
     int         fps_;
+    int         bitrate_;
     int         width_;
     int         height_;
-    bool        crop_; // temporary crop config in output, as no stage that crop the stream to the specs has been made yet
-    // TODO: Add bitrate?
+    bool        crop_;
 
     // File mode
     std::string file_path_;

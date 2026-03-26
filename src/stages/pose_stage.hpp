@@ -12,9 +12,9 @@ class PoseStage : public ThreadedStage
 {
 public:
     PoseStage(shared_ptr<Router> router, const Config &cfg)
-        : ThreadedStage("pose", std::move(router), 1)
-        , MIN_GOOD_MATCHES_(cfg.get<int>("MIN_GOOD_MATCHES", 8))
-        , ALPHA_(cfg.get<float>("ALPHA", 0.4f))
+        : ThreadedStage("pose", std::move(router), cfg.get<int>("pose.queue_size", 1))
+        , MIN_GOOD_MATCHES_(cfg.get<int>("pose.MIN_GOOD_MATCHES", 8))
+        , ALPHA_(cfg.get<float>("pose.ALPHA", 0.4f))
         , crop_w_(cfg.get<int>("pose.crop_width", 0))
         , crop_h_(cfg.get<int>("pose.crop_height", 0))
     {
