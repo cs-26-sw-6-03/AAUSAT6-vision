@@ -106,8 +106,9 @@ public:
         ctx->flags.has_inliers = true;
 
         // Update previous-frame state (raw keypoints, not from warped frame)
+        // Swap descriptor buffers: prev_desc_ gets curr data, old prev_desc_ is freed with ctx
         prev_kps_  = curr_kps;
-        prev_desc_ = curr_desc.clone();
+        cv::swap(prev_desc_, ctx->orb_result->descriptors);
 
         ++frame_idx_;
     }

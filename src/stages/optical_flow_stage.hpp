@@ -44,7 +44,7 @@ public:
         // No previous frame yet — store gray and pass through
         if (prev_gray_.empty() || prev_pts_.empty())
         {
-            prev_gray_ = gray.clone();
+            cv::swap(prev_gray_, gray);
             ++frame_idx_;
             return;
         }
@@ -93,7 +93,7 @@ public:
             }
         }
 
-        gray.copyTo(prev_gray_);
+        cv::swap(prev_gray_, gray);
         ++frame_idx_;
     }
 
@@ -103,5 +103,5 @@ private:
     cv::Mat                  prev_gray_;
     std::vector<cv::Point2f> prev_pts_;
     size_t                   frame_idx_        = 0;
-    int                      min_tracking_pts_ = 200;
+    int                      min_tracking_pts_;
 };
