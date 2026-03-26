@@ -5,6 +5,10 @@ input:
   source: ""              # File path or GStreamer pipeline string (required)
   loop: false             # Reopen source when it ends (useful for file inputs)
 
+pictures:
+  path: "/tmp/vision"    # Directory of reference images, scanned recursively at runtime
+  refresh_interval_s: 5  # How often (seconds) to re-scan for new reference images
+
 optical_flow:
   max_corners: 200
   quality_level: 0.01
@@ -18,6 +22,7 @@ orb:
   n_levels: 8
   edge_threshold: 31
   patch_size: 31
+  min_matches: 8          # Minimum good matches after ratio test to count as a valid detection
 
 matching:
   hamming_ratio_test: 0.75   # Lowe's ratio test threshold
@@ -31,6 +36,7 @@ ransac:
 
 pose:
   enabled: true
+  queue_size: 1          # Input queue depth (keep at 1 to avoid stale pose data)
   MIN_GOOD_MATCHES: 8
   ALPHA: 0.4
   lastvalid: false
@@ -42,6 +48,7 @@ output:
   width: 1920
   height: 1080
   fps: 30
+  bitrate: 2000          # Encoder bitrate in kbps (applies to x264enc and vpuenc_h264)
   mode: "file"
   file:
     path: "output.mp4"
