@@ -23,6 +23,7 @@ orb:
   edge_threshold: 31
   patch_size: 31
   min_matches: 8          # Minimum good matches after ratio test to count as a valid detection
+  detect_every: 1         # Run detection every N frames; skipped frames pass to optical flow for continued tracking
 
 matching:
   hamming_ratio_test: 0.75   # Lowe's ratio test threshold
