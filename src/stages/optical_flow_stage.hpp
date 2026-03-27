@@ -29,13 +29,25 @@ public:
         cv::Mat gray;
         cv::cvtColor(ctx->frame, gray, cv::COLOR_BGR2GRAY);
 
-        // If ORB just found a match in active mode: seed tracking points from matched keypoints
-        if (ctx->flags.has_matches && ctx->orb_result.has_value() && ctx->matching_result.has_value())
+        // Seed tracking points from ORB keypoints whenever ORB ran
+        if (ctx->orb_result.has_value() && !ctx->orb_result->keypoints.empty())
         {
-            prev_pts_.clear();
-            for (const auto& m : ctx->matching_result->matches)
-                prev_pts_.push_back(ctx->orb_result->keypoints[m.queryIdx].pt);
-            orb_active_->store(false);
+            if (ctx->flags.has_matches && ctx->matching_result.has_value())
+            {
+                // DB match found: seed from matched keypoints only, switch ORB to passive
+                prev_pts_.clear();
+                for (const auto& m : ctx->matching_result->matches)
+                    prev_pts_.push_back(ctx->orb_result->keypoints[m.queryIdx].pt);
+                orb_active_->store(false);
+            }
+            else if (prev_pts_.empty())
+            {
+                // No DB match yet and no active tracking: seed from all detected keypoints
+                // so the stabilizer can run while ORB keeps searching for a reference match
+                for (const auto& kp : ctx->orb_result->keypoints)
+                    prev_pts_.push_back(kp.pt);
+                // Keep ORB active — it must keep searching for a DB match
+            }
         }
 
         ctx->flags.has_keypoints   = false;

@@ -30,38 +30,51 @@ public:
 
     void process(std::shared_ptr<FrameContext> ctx) override
     {
-        if (!ctx->orb_result.has_value()) {
-            ctx->flags.has_inliers = true;  // pass-through: route to output
-            return;
+        std::vector<cv::Point2f> pts_prev, pts_curr;
+
+        if (ctx->orb_result.has_value() && !ctx->orb_result->descriptors.empty())
+        {
+            // ORB ran this frame — use adjacent-frame descriptor matching
+            const auto& curr_kps  = ctx->orb_result->keypoints;
+            const auto& curr_desc = ctx->orb_result->descriptors;
+
+            if (!initialized_ || prev_desc_.empty()) {
+                // First ORB frame: seed buffer, push identity, skip stabilization
+                trajectory_.push_back(cv::Mat::eye(3, 3, CV_64F));
+                prev_kps_    = curr_kps;
+                curr_desc.copyTo(prev_desc_);
+                initialized_ = true;
+                ++frame_idx_;
+                ctx->flags.has_pose    = false;
+                ctx->flags.has_inliers = true;
+                return;
+            }
+
+            std::vector<std::vector<cv::DMatch>> knn_matches;
+            matcher_->knnMatch(prev_desc_, curr_desc, knn_matches, 2);
+            for (const auto& m : knn_matches) {
+                if (m.size() < 2) continue;
+                if (m[0].distance < lowe_ratio * m[1].distance) {
+                    pts_prev.push_back(prev_kps_[m[0].queryIdx].pt);
+                    pts_curr.push_back(curr_kps[m[0].trainIdx].pt);
+                }
+            }
+
+            // Update ORB buffer after matching (prev holds previous frame until here)
+            prev_kps_ = curr_kps;
+            cv::swap(prev_desc_, ctx->orb_result->descriptors);
         }
-
-        const auto& curr_kps  = ctx->orb_result->keypoints;
-        const auto& curr_desc = ctx->orb_result->descriptors;
-
-        // First frame: store state and pass through unchanged
-        if (!initialized_ || prev_desc_.empty()) {
-            trajectory_.push_back(cv::Mat::eye(3, 3, CV_64F));
-            prev_kps_    = curr_kps;
-            curr_desc.copyTo(prev_desc_);
-            initialized_ = true;
-            ++frame_idx_;
-            ctx->flags.has_pose    = false;
+        else if (ctx->optical_flow_result.has_value() &&
+                 !ctx->optical_flow_result->points_prev.empty())
+        {
+            // ORB not running this frame — use optical flow tracked correspondences
+            pts_prev = ctx->optical_flow_result->points_prev;
+            pts_curr = ctx->optical_flow_result->points_curr;
+        }
+        else
+        {
             ctx->flags.has_inliers = true;
             return;
-        }
-
-        // Match previous frame → current frame
-        std::vector<std::vector<cv::DMatch>> knn_matches;
-        matcher_->knnMatch(prev_desc_, curr_desc, knn_matches, 2);
-
-        // Lowe's ratio test
-        std::vector<cv::Point2f> pts_prev, pts_curr;
-        for (const auto& m : knn_matches) {
-            if (m.size() < 2) continue;
-            if (m[0].distance < lowe_ratio * m[1].distance) {
-                pts_prev.push_back(prev_kps_[m[0].queryIdx].pt);
-                pts_curr.push_back(curr_kps[m[0].trainIdx].pt);
-            }
         }
 
         // ED-RANSAC homography estimation
@@ -100,16 +113,9 @@ public:
                             cv::BORDER_REPLICATE);
         ctx->frame = stabilized;
 
-        // Store result
         ctx->ransac_result.emplace();
         ctx->ransac_result->homography = H_inter;
         ctx->flags.has_inliers = true;
-
-        // Update previous-frame state (raw keypoints, not from warped frame)
-        // Swap descriptor buffers: prev_desc_ gets curr data, old prev_desc_ is freed with ctx
-        prev_kps_  = curr_kps;
-        cv::swap(prev_desc_, ctx->orb_result->descriptors);
-
         ++frame_idx_;
     }
 
