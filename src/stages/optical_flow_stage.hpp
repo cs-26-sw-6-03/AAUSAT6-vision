@@ -14,6 +14,8 @@ public:
         : ThreadedStage("optical_flow", std::move(router), cfg.get<int>("pipeline.queue_size", 32), cpu_affinity)
         , orb_active_(std::move(orb_active))
         , min_tracking_pts_(cfg.get<int>("optical_flow.min_tracking_pts", 200))
+        , win_size_(cfg.get<int>("optical_flow.win_size", 21))
+        , pyr_levels_(cfg.get<int>("optical_flow.pyr_levels", 3))
     {
     }
 
@@ -29,7 +31,14 @@ public:
         cv::Mat gray;
         cv::cvtColor(ctx->frame, gray, cv::COLOR_BGR2GRAY);
 
+        // Propagate one-frame-delayed reseeding signal to the stabilizer
+        if (reset_trajectory_next_) {
+            ctx->flags.tracking_reseeded = true;
+            reset_trajectory_next_ = false;
+        }
+
         // Seed tracking points from ORB keypoints whenever ORB ran
+        bool just_seeded = false;
         if (ctx->orb_result.has_value() && !ctx->orb_result->keypoints.empty())
         {
             if (ctx->flags.has_matches && ctx->matching_result.has_value())
@@ -39,6 +48,8 @@ public:
                 for (const auto& m : ctx->matching_result->matches)
                     prev_pts_.push_back(ctx->orb_result->keypoints[m.queryIdx].pt);
                 orb_active_->store(false);
+                just_seeded = true;
+                reset_trajectory_next_ = true;
             }
             else if (prev_pts_.empty())
             {
@@ -47,14 +58,18 @@ public:
                 for (const auto& kp : ctx->orb_result->keypoints)
                     prev_pts_.push_back(kp.pt);
                 // Keep ORB active — it must keep searching for a DB match
+                just_seeded = true;
+                reset_trajectory_next_ = true;
             }
         }
 
         ctx->flags.has_keypoints   = false;
         ctx->flags.skip_processing = true;
 
-        // No previous frame yet — store gray and pass through
-        if (prev_gray_.empty() || prev_pts_.empty())
+        // On seeding frames, store current gray and skip LK — the seeded positions are
+        // in the current frame so tracking must start from the next frame to be correct.
+        // Also skip if there is no previous frame or no points to track.
+        if (prev_gray_.empty() || prev_pts_.empty() || just_seeded)
         {
             cv::swap(prev_gray_, gray);
             ++frame_idx_;
@@ -65,7 +80,9 @@ public:
         std::vector<cv::Point2f> curr_pts;
         std::vector<uchar>       status;
         std::vector<float>       err;
-        cv::calcOpticalFlowPyrLK(prev_gray_, gray, prev_pts_, curr_pts, status, err, cv::Size(21, 21), 3, cv::TermCriteria((cv::TermCriteria::COUNT + cv::TermCriteria::EPS), 30, 0.01), 0);
+        cv::calcOpticalFlowPyrLK(prev_gray_, gray, prev_pts_, curr_pts, status, err,
+                                 cv::Size(win_size_, win_size_), pyr_levels_,
+                                 cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 30, 0.01), 0);
 
         auto& result = ctx->optical_flow_result.emplace();
 
@@ -116,4 +133,7 @@ private:
     std::vector<cv::Point2f> prev_pts_;
     size_t                   frame_idx_        = 0;
     int                      min_tracking_pts_;
+    int                      win_size_;
+    int                      pyr_levels_;
+    bool                     reset_trajectory_next_ = false;
 };

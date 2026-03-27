@@ -26,8 +26,9 @@ struct RoutingFlags {
     bool drop_frame       = false;    // Frame is unusable               -> discard
 
     // Informational only (not used for routing)
-    bool needs_redetect   = false;    // Optical flow lost tracking — ORB switched to active
-    bool has_matches      = false;    // ORB active mode found DB matches
+    bool needs_redetect      = false;    // Optical flow lost tracking — ORB switched to active
+    bool has_matches         = false;    // ORB active mode found DB matches
+    bool tracking_reseeded   = false;    // stabilizer should reset trajectory this frame
 };
 
 // Optical flow result struct

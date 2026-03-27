@@ -30,7 +30,8 @@ public:
 
     void process(std::shared_ptr<FrameContext> ctx) override
     {
-        std::vector<cv::Point2f> pts_prev, pts_curr;
+        std::vector<cv::Point2f> pts_prev, pts_curr;  
+
 
         if (ctx->orb_result.has_value() && !ctx->orb_result->descriptors.empty())
         {
@@ -91,6 +92,11 @@ public:
             std::cerr << "[EdRansacStage] Too few matches ("
                       << pts_prev.size() << ") at frame "
                       << frame_idx_ << " — using identity.\n";
+        }
+
+        if (ctx->flags.tracking_reseeded){
+            trajectory_.clear();
+            trajectory_.push_back(cv::Mat::eye(3,3,CV_64F));
         }
 
         // Accumulate trajectory: T[i] = H_inter(i-1→i) * T[i-1]

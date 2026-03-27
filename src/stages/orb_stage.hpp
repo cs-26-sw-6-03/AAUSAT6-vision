@@ -127,7 +127,7 @@ private:
     int n_features_;
     int min_matches_;
     int detect_every_;
-    int frame_count_ = 0;
+    int frame_count_ = -1;
     std::shared_ptr<PictureDB> picture_db_;
     std::filesystem::path picture_db_path_;
     std::chrono::seconds refresh_interval_;
