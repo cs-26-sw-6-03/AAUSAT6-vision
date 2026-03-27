@@ -10,8 +10,8 @@ class OpticalFlowStage : public ThreadedStage
 {
 public:
     OpticalFlowStage(std::shared_ptr<Router> router, const Config &cfg,
-                     std::shared_ptr<std::atomic<bool>> orb_active)
-        : ThreadedStage("optical_flow", std::move(router), cfg.get<int>("pipeline.queue_size", 32))
+                     std::shared_ptr<std::atomic<bool>> orb_active, int cpu_affinity = -1)
+        : ThreadedStage("optical_flow", std::move(router), cfg.get<int>("pipeline.queue_size", 32), cpu_affinity)
         , orb_active_(std::move(orb_active))
         , min_tracking_pts_(cfg.get<int>("optical_flow.min_tracking_pts", 200))
     {
@@ -53,7 +53,7 @@ public:
         std::vector<cv::Point2f> curr_pts;
         std::vector<uchar>       status;
         std::vector<float>       err;
-        cv::calcOpticalFlowPyrLK(prev_gray_, gray, prev_pts_, curr_pts, status, err);
+        cv::calcOpticalFlowPyrLK(prev_gray_, gray, prev_pts_, curr_pts, status, err, cv::Size(21, 21), 3, cv::TermCriteria((cv::TermCriteria::COUNT + cv::TermCriteria::EPS), 30, 0.01), 0);
 
         auto& result = ctx->optical_flow_result.emplace();
 

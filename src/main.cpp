@@ -49,12 +49,12 @@ int main(int argc, char* argv[]) {
     auto orb_mode = std::make_shared<std::atomic<bool>>(true);
 
     // Stage order: capture -> orb -> optical_flow -> pose -> ransac -> output
-    pipeline.add_stage(std::make_shared<CaptureStage>     (pipeline.router(), cfg));
-    pipeline.add_stage(std::make_shared<OrbStage>         (pipeline.router(), cfg, orb_mode));
-    pipeline.add_stage(std::make_shared<OpticalFlowStage> (pipeline.router(), cfg, orb_mode));
-    pipeline.add_stage(std::make_shared<PoseStage>        (pipeline.router(), cfg));
-    pipeline.add_stage(std::make_shared<EdRansacStage>    (pipeline.router(), cfg));
-    pipeline.add_stage(std::make_shared<OutputStage>      (pipeline.router(), cfg));
+    pipeline.add_stage(std::make_shared<CaptureStage>     (pipeline.router(), cfg, 0));
+    pipeline.add_stage(std::make_shared<OrbStage>         (pipeline.router(), cfg, orb_mode, 1));
+    pipeline.add_stage(std::make_shared<OpticalFlowStage> (pipeline.router(), cfg, orb_mode, 2));
+    pipeline.add_stage(std::make_shared<PoseStage>        (pipeline.router(), cfg, 3));
+    pipeline.add_stage(std::make_shared<EdRansacStage>    (pipeline.router(), cfg, 4));
+    pipeline.add_stage(std::make_shared<OutputStage>      (pipeline.router(), cfg, 3));
 
     pipeline.start();
 

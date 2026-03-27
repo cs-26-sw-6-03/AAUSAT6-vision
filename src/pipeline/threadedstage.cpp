@@ -10,10 +10,12 @@
 
 ThreadedStage::ThreadedStage(std::string name,
                              std::shared_ptr<Router> router,
-                             size_t queue_size)
+                             size_t queue_size,
+                             int cpu_affinity)
     : Stage(std::move(name))
     , router_(std::move(router))
     , queue_(std::make_shared<FrameQueue>(queue_size))
+    , cpu_affinity_(cpu_affinity)
 {}
  
 ThreadedStage::~ThreadedStage() {
@@ -24,6 +26,13 @@ void ThreadedStage::start() {
     if (running_.exchange(true)) return;
     init();
     thread_ = std::thread(&ThreadedStage::run, this);
+
+          if (cpu_affinity_ >= 0) {
+          cpu_set_t cpuset;
+          CPU_ZERO(&cpuset);
+          CPU_SET(cpu_affinity_, &cpuset);
+          pthread_setaffinity_np(thread_.native_handle(), sizeof(cpu_set_t), &cpuset);
+      }
 }
  
 void ThreadedStage::stop() {

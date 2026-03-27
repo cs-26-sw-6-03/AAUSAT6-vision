@@ -15,10 +15,11 @@
 class OrbStage : public ThreadedStage {
 public:
     OrbStage(std::shared_ptr<Router> router, const Config& cfg,
-             std::shared_ptr<std::atomic<bool>> active_mode)
-        : ThreadedStage("orb", std::move(router), cfg.get<int>("pipeline.queue_size", 32))
+             std::shared_ptr<std::atomic<bool>> active_mode, int cpu_affinity = -1)
+        : ThreadedStage("orb", std::move(router), cfg.get<int>("pipeline.queue_size", 32), cpu_affinity)
         , n_features_(cfg.get<int>("orb.n_features", 1000))
         , min_matches_(cfg.get<int>("orb.min_matches", 10))
+        , detect_every_(cfg.get<int>("orb.detect_every", 1))
         , picture_db_path_(std::filesystem::path(cfg.get<std::string>("pictures.path", "/tmp/vision")))
         , refresh_interval_(std::chrono::seconds(cfg.get<int>("pictures.refresh_interval_s", 5)))
         , active_(std::move(active_mode))
@@ -64,6 +65,14 @@ public:
         }
 
         // Active mode: detect keypoints and match against reference DB
+        // Skip frames to reduce CPU load — only detect every N frames.
+        // has_keypoints = true routes the frame to optical_flow for continued tracking.
+        if (++frame_count_ % detect_every_ != 0) {
+            ctx->flags.has_keypoints = true;
+            ctx->flags.has_matches   = false;
+            return;
+        }
+
         cv::Mat gray;
         cv::cvtColor(ctx->frame, gray, cv::COLOR_BGR2GRAY);
         orb_->detectAndCompute(gray, cv::noArray(),
@@ -117,6 +126,8 @@ private:
     cv::BFMatcher matcher_;
     int n_features_;
     int min_matches_;
+    int detect_every_;
+    int frame_count_ = 0;
     std::shared_ptr<PictureDB> picture_db_;
     std::filesystem::path picture_db_path_;
     std::chrono::seconds refresh_interval_;

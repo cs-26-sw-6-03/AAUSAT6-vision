@@ -43,6 +43,7 @@ Experiment overlays are merged on top of the base config. See `config/default.ya
 - `orb.edge_threshold` (default: `31`) — border size with no feature detection, should match `patch_size`
 - `orb.patch_size` (default: `31`) — patch size for the BRIEF descriptor
 - `orb.min_matches` (default: `8`) — minimum good matches after ratio test to count as a valid detection; frames with no match are dropped
+- `orb.detect_every` (default: `1`) — run ORB detection every N frames; skipped frames are passed directly to optical flow for continued point tracking
 
 **pictures**
 - `pictures.path` (default: `"/tmp/vision"`) — directory of reference images for ORB matching, scanned recursively and kept in sync at runtime
