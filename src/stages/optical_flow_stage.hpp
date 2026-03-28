@@ -49,6 +49,7 @@ public:
                     prev_pts_.push_back(ctx->orb_result->keypoints[m.queryIdx].pt);
                 orb_active_->store(false);
                 just_seeded = true;
+                ctx->flags.tracking_just_seeded = true;
                 reset_trajectory_next_ = true;
             }
             else if (prev_pts_.empty())
@@ -59,6 +60,7 @@ public:
                     prev_pts_.push_back(kp.pt);
                 // Keep ORB active — it must keep searching for a DB match
                 just_seeded = true;
+                ctx->flags.tracking_just_seeded = true;
                 reset_trajectory_next_ = true;
             }
         }
