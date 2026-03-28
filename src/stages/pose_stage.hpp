@@ -38,8 +38,10 @@ public:
             !ctx->matching_result.has_value() ||
             (int)ctx->matching_result->matches.size() < MIN_GOOD_MATCHES_)
         {
-            // Crop to frame center as fallback
-            Point2f center(ctx->frame.cols / 2.f, ctx->frame.rows / 2.f);
+            // Use last known object center if available, otherwise frame center
+            Point2f center = smoothed_initialized_
+                ? smoothedCenter
+                : Point2f(ctx->frame.cols / 2.f, ctx->frame.rows / 2.f);
             crop(ctx, center);
             return;
         }
@@ -49,6 +51,16 @@ public:
         {
             ptsFrame.push_back(ctx->orb_result->keypoints[m.queryIdx].pt);
             ptsObject.push_back(ctx->orb_result->object_keypoints[m.trainIdx].pt);
+        }
+
+        // ORB keypoints were detected in the pre-stabilization frame.
+        // Transform them into the stabilized frame's coordinate space using the
+        // correction warp stored by EdRansacStage (which now runs before Pose).
+        if (ctx->ransac_result.has_value() && !ctx->ransac_result->homography.empty())
+        {
+            vector<Point2f> ptsFrameWarped;
+            cv::perspectiveTransform(ptsFrame, ptsFrameWarped, ctx->ransac_result->homography);
+            ptsFrame = ptsFrameWarped;
         }
 
         Mat inlierMask;
