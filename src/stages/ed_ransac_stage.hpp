@@ -30,12 +30,10 @@ public:
 
     void process(std::shared_ptr<FrameContext> ctx) override
     {
-        std::vector<cv::Point2f> pts_prev, pts_curr;  
-
+        std::vector<cv::Point2f> pts_prev, pts_curr;
 
         if (ctx->orb_result.has_value() && !ctx->orb_result->descriptors.empty())
         {
-            // ORB ran this frame — use adjacent-frame descriptor matching
             const auto& curr_kps  = ctx->orb_result->keypoints;
             const auto& curr_desc = ctx->orb_result->descriptors;
 
@@ -51,28 +49,49 @@ public:
                 return;
             }
 
-            std::vector<std::vector<cv::DMatch>> knn_matches;
-            matcher_->knnMatch(prev_desc_, curr_desc, knn_matches, 2);
-            for (const auto& m : knn_matches) {
-                if (m.size() < 2) continue;
-                if (m[0].distance < lowe_ratio * m[1].distance) {
-                    pts_prev.push_back(prev_kps_[m[0].queryIdx].pt);
-                    pts_curr.push_back(curr_kps[m[0].trainIdx].pt);
+            if (ctx->flags.tracking_just_seeded) {
+                // Seeding frame: reset trajectory, update buffer, skip warp
+                trajectory_.clear();
+                trajectory_.push_back(cv::Mat::eye(3, 3, CV_64F));
+                prev_kps_ = curr_kps;
+                curr_desc.copyTo(prev_desc_);
+                ctx->flags.has_inliers = true;
+                ++frame_idx_;
+                return;
+            }
+
+            // LK is preferred when available — it spans exactly one frame.
+            // Only use ORB adjacent-frame matching as fallback when LK has no result
+            // (e.g. immediately after a tracking loss before LK has caught up).
+            bool lk_available = ctx->optical_flow_result.has_value() &&
+                                 !ctx->optical_flow_result->points_prev.empty();
+            if (!lk_available) {
+                std::vector<std::vector<cv::DMatch>> knn_matches;
+                matcher_->knnMatch(prev_desc_, curr_desc, knn_matches, 2);
+                for (const auto& m : knn_matches) {
+                    if (m.size() < 2) continue;
+                    if (m[0].distance < lowe_ratio * m[1].distance) {
+                        pts_prev.push_back(prev_kps_[m[0].queryIdx].pt);
+                        pts_curr.push_back(curr_kps[m[0].trainIdx].pt);
+                    }
                 }
             }
 
-            // Update ORB buffer after matching (prev holds previous frame until here)
+            // Always update ORB buffer so future ORB-only frames have fresh descriptors
             prev_kps_ = curr_kps;
             cv::swap(prev_desc_, ctx->orb_result->descriptors);
         }
-        else if (ctx->optical_flow_result.has_value() &&
-                 !ctx->optical_flow_result->points_prev.empty())
+
+        // Prefer LK correspondences (single-frame motion, reliable at any speed)
+        if (pts_prev.empty() &&
+            ctx->optical_flow_result.has_value() &&
+            !ctx->optical_flow_result->points_prev.empty())
         {
-            // ORB not running this frame — use optical flow tracked correspondences
             pts_prev = ctx->optical_flow_result->points_prev;
             pts_curr = ctx->optical_flow_result->points_curr;
         }
-        else
+
+        if (pts_prev.empty())
         {
             ctx->flags.has_inliers = true;
             return;
@@ -94,9 +113,9 @@ public:
                       << frame_idx_ << " — using identity.\n";
         }
 
-        if (ctx->flags.tracking_reseeded){
+        if (ctx->flags.tracking_reseeded) {
             trajectory_.clear();
-            trajectory_.push_back(cv::Mat::eye(3,3,CV_64F));
+            trajectory_.push_back(cv::Mat::eye(3, 3, CV_64F));
         }
 
         // Accumulate trajectory: T[i] = H_inter(i-1→i) * T[i-1]
@@ -120,7 +139,7 @@ public:
         ctx->frame = stabilized;
 
         ctx->ransac_result.emplace();
-        ctx->ransac_result->homography = H_inter;
+        ctx->ransac_result->homography = warp;
         ctx->flags.has_inliers = true;
         ++frame_idx_;
     }
