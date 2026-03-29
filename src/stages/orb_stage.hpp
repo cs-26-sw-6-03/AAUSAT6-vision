@@ -112,6 +112,7 @@ public:
                 ctx->orb_result->object_keypoints = picture_db_->keypoints()[i];
                 ctx->orb_result->object_size      = picture_db_->sizes()[i];
                 ctx->flags.has_matches = true;
+                std::cout << "Match found";
                 return;
             }
         }

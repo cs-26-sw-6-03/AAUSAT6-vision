@@ -43,10 +43,12 @@ public:
         {
             if (ctx->flags.has_matches && ctx->matching_result.has_value())
             {
-                // DB match found: seed from matched keypoints only, switch ORB to passive
+                // DB match found: seed from all ORB keypoints for stable tracking, switch ORB to passive.
+                // Pose locates the object via matching_result independently — seeding only the
+                // ~12 matched points would immediately fall below min_tracking_pts and reactivate ORB.
                 prev_pts_.clear();
-                for (const auto& m : ctx->matching_result->matches)
-                    prev_pts_.push_back(ctx->orb_result->keypoints[m.queryIdx].pt);
+                for (const auto& kp : ctx->orb_result->keypoints)
+                    prev_pts_.push_back(kp.pt);
                 orb_active_->store(false);
                 just_seeded = true;
                 ctx->flags.tracking_just_seeded = true;
