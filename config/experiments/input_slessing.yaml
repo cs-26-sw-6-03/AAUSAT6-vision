@@ -1,6 +1,10 @@
 input:
-    source: "/home/digita/projects/AAUSAT6-C-/Untitled30.mp4"
+    source: "/home/slessing/Downloads/jitter.mp4"
 
 orb:
-  n_features: 200
-  detect_every: 1
+  n_features: 1000
+  detect_every: 60
+
+optical_flow:
+    win_size: 41
+    pyr_levels: 5

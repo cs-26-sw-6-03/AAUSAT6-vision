@@ -27,19 +27,27 @@ public:
 
     void process(shared_ptr<FrameContext> ctx) override
     {
-        // Always emplace pose_result and set has_pose so the frame continues to ransac
+        // Always emplace pose_result and set has_pose so the frame continues to output
         auto& pr = ctx->pose_result.emplace();
         pr.valid  = false;
         ctx->flags.has_pose        = true;
         ctx->flags.skip_processing = false;
 
-        // No ORB result or no matches (ORB was passive, or active but no DB match)
-        if (!ctx->orb_result.has_value() ||
-            !ctx->matching_result.has_value() ||
-            (int)ctx->matching_result->matches.size() < MIN_GOOD_MATCHES_)
+        bool has_active_detection =
+            ctx->orb_result.has_value() &&
+            ctx->matching_result.has_value() &&
+            (int)ctx->matching_result->matches.size() >= MIN_GOOD_MATCHES_;
+
+        if (!has_active_detection)
         {
-            // Crop to frame center as fallback
-            Point2f center(ctx->frame.cols / 2.f, ctx->frame.rows / 2.f);
+            // Propagate smoothedCenter (raw coords) using optical flow mean displacement.
+            // This keeps the crop tracking the object as the camera pans.
+            if (smoothed_initialized_ && ctx->optical_flow_result.has_value())
+                propagateCenter(ctx->optical_flow_result.value());
+
+            Point2f center = smoothed_initialized_
+                ? stabilizedCenter(ctx)
+                : Point2f(ctx->frame.cols / 2.f, ctx->frame.rows / 2.f);
             crop(ctx, center);
             return;
         }
@@ -51,56 +59,95 @@ public:
             ptsObject.push_back(ctx->orb_result->object_keypoints[m.trainIdx].pt);
         }
 
+        // ORB keypoints were detected in the pre-stabilization frame.
+        // Transform them into the stabilized frame's coordinate space.
+        if (ctx->ransac_result.has_value() && !ctx->ransac_result->homography.empty())
+        {
+            vector<Point2f> warped;
+            cv::perspectiveTransform(ptsFrame, warped, ctx->ransac_result->homography);
+            ptsFrame = warped;
+        }
+
         Mat inlierMask;
         Mat H = findHomography(ptsObject, ptsFrame, RANSAC, 3.0, inlierMask);
 
         if (H.empty()) {
-            Point2f center(ctx->frame.cols / 2.f, ctx->frame.rows / 2.f);
-            crop(ctx, center);
+            crop(ctx, smoothed_initialized_ ? stabilizedCenter(ctx)
+                                            : Point2f(ctx->frame.cols / 2.f, ctx->frame.rows / 2.f));
             return;
         }
 
         int inlierCount = countNonZero(inlierMask);
-        if (inlierCount < MIN_GOOD_MATCHES_) {
-            Point2f center(ctx->frame.cols / 2.f, ctx->frame.rows / 2.f);
-            crop(ctx, center);
+        if (inlierCount < 4) {
+            std::cerr << "[PoseStage] too few inliers (" << inlierCount << ") — using last known center\n";
+            crop(ctx, smoothed_initialized_ ? stabilizedCenter(ctx)
+                                            : Point2f(ctx->frame.cols / 2.f, ctx->frame.rows / 2.f));
             return;
         }
 
-        // Project the reference image's center through H to find where the object appears in the frame.
-        // H maps object-space → frame-space, so we must use the reference image dimensions here,
-        // not the current frame dimensions.
-        cv::Size objSize = ctx->orb_result->object_size;
-        Point2f refCenter(objSize.width / 2.f, objSize.height / 2.f);
-        vector<Point2f> refPts = {refCenter};
-        vector<Point2f> projectedPts;
-        perspectiveTransform(refPts, projectedPts, H);
+        // Compute detected center as centroid of INLIER frame keypoints.
+        // This is always within the frame bounds and avoids projecting the
+        // reference-image center through a potentially noisy homography
+        // (which can land outside the frame if the reference image is large).
+        Point2f detectedCenter(0, 0);
+        for (int i = 0; i < (int)ptsFrame.size(); ++i)
+            if (inlierMask.at<uchar>(i))
+                detectedCenter += ptsFrame[i];
+        detectedCenter *= (1.0f / static_cast<float>(inlierCount));
 
-        Point2f detectedCenter = projectedPts[0];
-        if (detectedCenter.x < 0 || detectedCenter.y < 0 ||
-            detectedCenter.x >= ctx->frame.cols ||
-            detectedCenter.y >= ctx->frame.rows)
+        std::cerr << "[PoseStage] detection: center=(" << detectedCenter.x << ","
+                  << detectedCenter.y << ") inliers=" << inlierCount
+                  << "/" << ctx->matching_result->matches.size() << "\n";
+
+        // detectedCenter is in stabilized frame coordinates (ptsFrame was warped above).
+        // Un-warp to raw frame coordinates so that smoothedCenter is always in raw space
+        // (consistent with optical-flow propagation).
+        Point2f detectedRaw = detectedCenter;
+        if (ctx->ransac_result.has_value() && !ctx->ransac_result->homography.empty())
         {
-            Point2f center(ctx->frame.cols / 2.f, ctx->frame.rows / 2.f);
-            crop(ctx, center);
-            return;
+            vector<Point2f> pts = {detectedCenter}, raw;
+            cv::perspectiveTransform(pts, raw, ctx->ransac_result->homography.inv());
+            detectedRaw = raw[0];
         }
 
-        // Smooth the detection center (EMA). Initialize on first valid detection.
+        // EMA smoothing in raw coordinates.
         if (!smoothed_initialized_) {
-            smoothedCenter        = detectedCenter;
+            smoothedCenter        = detectedRaw;
             smoothed_initialized_ = true;
         } else {
-            smoothedCenter = ALPHA_ * detectedCenter + (1.f - ALPHA_) * smoothedCenter;
+            smoothedCenter = ALPHA_ * detectedRaw + (1.f - ALPHA_) * smoothedCenter;
         }
 
-        pr.center     = smoothedCenter;
+        Point2f cropCenter = stabilizedCenter(ctx);
+        pr.center     = cropCenter;
         pr.valid      = true;
         pr.confidence = (float)inlierCount / (float)ctx->matching_result->matches.size();
-        crop(ctx, smoothedCenter);
+        crop(ctx, cropCenter);
     }
 
 private:
+    // Propagate smoothedCenter (raw coords) by the mean optical flow displacement.
+    // Called every frame when ORB is passive so the crop follows scene motion.
+    void propagateCenter(const OpticalFlowResult& of)
+    {
+        if (of.points_prev.empty() || of.points_curr.empty()) return;
+        cv::Point2f sum(0, 0);
+        for (size_t i = 0; i < of.points_curr.size(); ++i)
+            sum += of.points_curr[i] - of.points_prev[i];
+        smoothedCenter += sum * (1.0f / static_cast<float>(of.points_curr.size()));
+    }
+
+    // Transform smoothedCenter (raw coords) to stabilized frame coordinates.
+    // If no correction warp exists (EdRansac skipped), raw == stabilized.
+    Point2f stabilizedCenter(const shared_ptr<FrameContext>& ctx) const
+    {
+        if (!ctx->ransac_result.has_value() || ctx->ransac_result->homography.empty())
+            return smoothedCenter;
+        vector<Point2f> pts = {smoothedCenter}, out;
+        cv::perspectiveTransform(pts, out, ctx->ransac_result->homography);
+        return out[0];
+    }
+
     Rect compute_roi(Point2f center, int src_w, int src_h) const
     {
         int half_w = crop_w_ / 2;
@@ -117,7 +164,6 @@ private:
 
     void crop(shared_ptr<FrameContext> ctx, Point2f center)
     {
-        // Skip if crop dimensions not configured or source is already smaller
         if (crop_w_ <= 0 || crop_h_ <= 0 ||
             crop_w_ >= ctx->frame.cols || crop_h_ >= ctx->frame.rows)
             return;
@@ -130,6 +176,6 @@ private:
     float   ALPHA_;
     int     crop_w_;
     int     crop_h_;
-    Point2f smoothedCenter;
+    Point2f smoothedCenter;           // always in RAW (pre-warp) frame coordinates
     bool    smoothed_initialized_ = false;
 };
