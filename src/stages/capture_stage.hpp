@@ -36,7 +36,8 @@ public:
         , source_(cfg.require<std::string>("input.source"))
         , loop_(cfg.get<bool>("input.loop", false))
         , target_fps_(cfg.get<int>("output.fps", 30))
-        , frame_period_(1.0 / target_fps_)
+        , frame_period_(std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+                std::chrono::duration<double>(1.0 / target_fps_)))
         , clock_initialized_(false)
     {}
 
@@ -116,7 +117,7 @@ private:
     std::string source_;
     bool        loop_;
     int         target_fps_;
-    std::chrono::duration<double> frame_period_; 
+    std::chrono::steady_clock::duration   frame_period_;
     std::chrono::steady_clock::time_point next_emit_;
     bool clock_initialized_;
 };
