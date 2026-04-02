@@ -32,7 +32,7 @@
 class CaptureStage : public ThreadedStage {
 public:
     CaptureStage(std::shared_ptr<Router> router, const Config& cfg)
-        : ThreadedStage("capture", std::move(router), 1)  // queue_size=1, unused by capture
+        : ThreadedStage("capture", std::move(router), 1)  // queue_size=1, unused by capture. initializer list. consumed
         , source_(cfg.require<std::string>("input.source"))
         , loop_(cfg.get<bool>("input.loop", false))
         , target_fps_(cfg.get<int>("output.fps", 30))
@@ -66,28 +66,33 @@ protected:
                     if (loop_) break;   // reopen source
                     return;             // source exhausted — exit naturally
                 }
+                
+                // I want to dispatch/forward/emit frames when the clock* says to do so.
+                auto now = std::chrono::steady_clock::now();
+                
+                // Indicate the clock is init
+                if (!clock_initialized_) {
+                    next_emit_ = now;
+                    clock_initialized_ = true;
+                }
+                
+                // Throw away frame, it is not time yet for a frame
+                if (now < next_emit_) {
+                    std::this_thread::sleep_until(next_emit_); // sleep on it, such that cpu does not actually read the frame just ot throw it away
+                    continue;
+                }
 
+                // Advance emit clock, correcting for that drift, you know
+                while (next_emit_ <= now)
+                    next_emit_ += frame_period_;
+                                
+                
+                // Emit frame
                 ctx->frame_id        = frame_id++;
                 ctx->frame_prev      = prev_frame;
                 ctx->flags.from_input = true;
                 prev_frame           = ctx->frame.clone();
 
-
-                // I want to dispatch/forward/emit frames when the clock* says to do so.
-                auto now = std::chrono::steady_clock::now();
-
-                if (!clock_initialized_) {
-                    next_emit_ = now;
-                    clock_initialized_ = true;
-                }
-
-                if (now < next_emit_) {
-                    continue;
-                }
-
-                while (next_emit_ <= now)
-                    next_emit_ += frame_period_;
-                
                 //route the frame into the pipeline
                 router()->dispatch(std::move(ctx));
             }
