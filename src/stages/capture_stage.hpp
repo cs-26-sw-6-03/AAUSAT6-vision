@@ -93,7 +93,7 @@ protected:
                 ctx->flags.from_input = true;
                 prev_frame           = ctx->frame.clone();
 
-                //route the frame into the pipeline
+                // Route the frame into the pipeline
                 router()->dispatch(std::move(ctx));
             }
 
