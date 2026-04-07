@@ -14,7 +14,7 @@ public:
     PoseStage(shared_ptr<Router> router, const Config &cfg, int cpu_affinity = -1)
         : ThreadedStage("pose", std::move(router), cfg.get<int>("pose.queue_size", 1), cpu_affinity)
         , MIN_GOOD_MATCHES_(cfg.get<int>("pose.MIN_GOOD_MATCHES", 8))
-        , ALPHA_(cfg.get<float>("pose.ALPHA", 0.4f))
+        , ALPHA_(cfg.get<float>("pose.ALPHA", 0.4f)) // The exponential moving averages (weight) for findineg smooth center of detected area
         , crop_w_(cfg.get<int>("pose.crop_width", 0))
         , crop_h_(cfg.get<int>("pose.crop_height", 0))
     {
