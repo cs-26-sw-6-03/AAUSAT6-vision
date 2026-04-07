@@ -26,10 +26,7 @@ struct RoutingFlags {
     bool drop_frame       = false;    // Frame is unusable               -> discard
 
     // Informational only (not used for routing)
-    bool needs_redetect      = false;    // Optical flow lost tracking — ORB switched to active
-    bool has_matches         = false;    // ORB active mode found DB matches
-    bool tracking_reseeded    = false;    // stabilizer should reset trajectory this frame (N+1)
-    bool tracking_just_seeded = false;   // ORB seeded this frame — stabilizer must skip H_inter (N)
+    bool needs_redetect      = false;    // Optical flow lost tracking — ORB switched to active    // ORB active mode found DB matches  
 };
 
 // Optical flow result struct
@@ -39,6 +36,8 @@ struct OpticalFlowResult {
     std::vector<uchar>       status;                   // Per-point tracking status
     float                    tracking_score = 0.0f;
     cv::Point2f              suggested_center;    // Fraction of points tracked
+    bool tracking_just_seeded = false; 
+    bool tracking_reseeded = false;
 };
 
 // Oriented 'Features from Accelerated Segment Test (FAST)' and Rotated 'Binary Robust Independent Elementary Features (BRIEF)' (ORB) result
@@ -49,6 +48,7 @@ struct OrbResult {
     std::vector<cv::KeyPoint> object_keypoints;
     cv::Mat                   object_descriptors;
     cv::Size                  object_size;  // Reference image dimensions (for projecting center through H)
+    bool has_matches         = false;
 };
 
 // Matching result struct

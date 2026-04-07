@@ -69,7 +69,7 @@ public:
         // has_keypoints = true routes the frame to optical_flow for continued tracking.
         if (++frame_count_ % detect_every_ != 0) {
             ctx->flags.has_keypoints = true;
-            ctx->flags.has_matches   = false;
+            ctx->orb_result->has_matches   = false;
             return;
         }
 
@@ -85,7 +85,7 @@ public:
 
         if (descriptorslist.empty() || ctx->orb_result->descriptors.empty()) {
             // No DB or no descriptors — proceed without matches
-            ctx->flags.has_matches = false;
+            ctx->orb_result->has_matches = false;
             return;
         }
 
@@ -111,14 +111,14 @@ public:
                 //ctx->matching_result->raw_matches = std::move(raw_matches);
                 ctx->orb_result->object_keypoints = picture_db_->keypoints()[i];
                 ctx->orb_result->object_size      = picture_db_->sizes()[i];
-                ctx->flags.has_matches = true;
+                ctx->orb_result->has_matches = true;
                 std::cout << "Match found";
                 return;
             }
         }
 
         // No reference picture matched well enough
-        ctx->flags.has_matches = false;
+        ctx->orb_result->has_matches = false;
     }
 
 

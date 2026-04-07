@@ -33,7 +33,7 @@ public:
 
         // Propagate one-frame-delayed reseeding signal to the stabilizer
         if (reset_trajectory_next_) {
-            ctx->flags.tracking_reseeded = true;
+            ctx->optical_flow_result->tracking_reseeded = true;
             reset_trajectory_next_ = false;
         }
 
@@ -41,7 +41,7 @@ public:
         bool just_seeded = false;
         if (ctx->orb_result.has_value() && !ctx->orb_result->keypoints.empty())
         {
-            if (ctx->flags.has_matches && ctx->matching_result.has_value())
+            if (ctx->orb_result->has_matches && ctx->matching_result.has_value())
             {
                 // DB match found: seed from all ORB keypoints for stable tracking, switch ORB to passive.
                 // Pose locates the object via matching_result independently — seeding only the
@@ -51,7 +51,7 @@ public:
                     prev_pts_.push_back(kp.pt);
                 orb_active_->store(false);
                 just_seeded = true;
-                ctx->flags.tracking_just_seeded = true;
+                ctx->optical_flow_result->tracking_just_seeded = true;
                 reset_trajectory_next_ = true;
             }
             else if (prev_pts_.empty())
@@ -62,7 +62,7 @@ public:
                     prev_pts_.push_back(kp.pt);
                 // Keep ORB active — it must keep searching for a DB match
                 just_seeded = true;
-                ctx->flags.tracking_just_seeded = true;
+                ctx->optical_flow_result->tracking_just_seeded = true;
                 reset_trajectory_next_ = true;
             }
         }

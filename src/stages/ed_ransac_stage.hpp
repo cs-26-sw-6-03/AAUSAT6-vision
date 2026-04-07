@@ -49,7 +49,7 @@ public:
                 return;
             }
 
-            if (ctx->flags.tracking_just_seeded) {
+            if (ctx->optical_flow_result->tracking_just_seeded) {
                 // Seeding frame: reset trajectory, update buffer, skip warp
                 trajectory_.clear();
                 trajectory_.push_back(cv::Mat::eye(3, 3, CV_64F));
@@ -113,7 +113,7 @@ public:
                       << frame_idx_ << " — using identity.\n";
         }
 
-        if (ctx->flags.tracking_reseeded) {
+        if (ctx->optical_flow_result->tracking_reseeded) {
             trajectory_.clear();
             trajectory_.push_back(cv::Mat::eye(3, 3, CV_64F));
         }
