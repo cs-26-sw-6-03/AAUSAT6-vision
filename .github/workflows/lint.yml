@@ -1,0 +1,47 @@
+name: lint
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  lint:
+    name: clang-tidy and cppcheck
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          TZ: Etc/UTC
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            clang \
+            clang-tidy \
+            cmake \
+            cppcheck \
+            pkg-config \
+            libopencv-dev \
+            libyaml-cpp-dev \
+            libunwind-dev \
+            libgstreamer1.0-dev \
+            libgstreamer-plugins-base1.0-dev
+
+      - name: Configure (compile_commands.json)
+        run: |
+          cmake -S . -B build-tidy -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
+
+      - name: Run clang-tidy
+        run: |
+          clang-tidy -p build-tidy $(find src -name "*.cpp")
+
+      - name: Run cppcheck
+        run: |
+          cppcheck --enable=all --inconclusive --quiet --error-exitcode=1 src
