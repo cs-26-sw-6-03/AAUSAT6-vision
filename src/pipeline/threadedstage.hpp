@@ -15,6 +15,7 @@
 #include <atomic>
 #include <memory>
 #include <chrono>
+#include <pthread.h>
 
 // Two modes:
 //   Queue mode (default) — for processing stages.
@@ -31,7 +32,8 @@ class ThreadedStage : public Stage {
 public:
     ThreadedStage(std::string name,
                   std::shared_ptr<Router> router,
-                  size_t queue_size = 32);
+                  size_t queue_size = 32,
+                  int cpu_affinity = -1);
  
     ~ThreadedStage() override;
  
@@ -59,6 +61,7 @@ private:
     std::shared_ptr<FrameQueue> queue_;
     std::thread                 thread_;
     std::atomic<bool>           running_{false};
+    int                         cpu_affinity_;
  
     static constexpr std::chrono::milliseconds POP_TIMEOUT{100};
 };

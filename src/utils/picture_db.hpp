@@ -23,6 +23,7 @@ public:
 
     const std::vector<std::vector<cv::KeyPoint>>& keypoints() const { return keypoints_; }
     const std::vector<cv::Mat>& descriptors() const { return descriptors_; }
+    const std::vector<cv::Size>& sizes() const { return sizes_; }
 
 private:
     std::filesystem::path pictures_path_;
@@ -33,4 +34,5 @@ private:
 
     std::vector<std::vector<cv::KeyPoint>> keypoints_;
     std::vector<cv::Mat> descriptors_;
+    std::vector<cv::Size> sizes_;
 };

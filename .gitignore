@@ -43,3 +43,5 @@
 # Dirs
 build/
 .vscode/c_cpp_properties.json
+.vscode/
+*.mp4

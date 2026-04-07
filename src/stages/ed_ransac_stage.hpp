@@ -8,8 +8,8 @@
 class EdRansacStage : public ThreadedStage
 {
 public:
-    EdRansacStage(std::shared_ptr<Router> router, const Config &cfg)
-        : ThreadedStage("ransac", std::move(router), cfg.get<int>("pipeline.queue_size", 32))
+    EdRansacStage(std::shared_ptr<Router> router, const Config &cfg, int cpu_affinity = -1)
+        : ThreadedStage("ransac", std::move(router), cfg.get<int>("pipeline.queue_size", 32), cpu_affinity)
     {
         lowe_ratio           = cfg.get<float>("stabilizer.lowe_ratio", 0.75f);
         ransac_reproj_thresh = cfg.get<float>("stabilizer.reprojection_threshold", 3.0);
@@ -30,37 +30,71 @@ public:
 
     void process(std::shared_ptr<FrameContext> ctx) override
     {
-        if (!ctx->orb_result.has_value()) {
-            dispatch(ctx);
-            return;
-        }
-
-        const auto& curr_kps  = ctx->orb_result->keypoints;
-        const auto& curr_desc = ctx->orb_result->descriptors;
-
-        // First frame: store state and pass through unchanged
-        if (!initialized_ || prev_desc_.empty()) {
-            trajectory_.push_back(cv::Mat::eye(3, 3, CV_64F));
-            prev_kps_    = curr_kps;
-            prev_desc_   = curr_desc.clone();
-            initialized_ = true;
-            ++frame_idx_;
-            dispatch(ctx);
-            return;
-        }
-
-        // Match previous frame → current frame
-        std::vector<std::vector<cv::DMatch>> knn_matches;
-        matcher_->knnMatch(prev_desc_, curr_desc, knn_matches, 2);
-
-        // Lowe's ratio test
         std::vector<cv::Point2f> pts_prev, pts_curr;
-        for (const auto& m : knn_matches) {
-            if (m.size() < 2) continue;
-            if (m[0].distance < lowe_ratio * m[1].distance) {
-                pts_prev.push_back(prev_kps_[m[0].queryIdx].pt);
-                pts_curr.push_back(curr_kps[m[0].trainIdx].pt);
+
+        if (ctx->orb_result.has_value() && !ctx->orb_result->descriptors.empty())
+        {
+            const auto& curr_kps  = ctx->orb_result->keypoints;
+            const auto& curr_desc = ctx->orb_result->descriptors;
+
+            if (!initialized_ || prev_desc_.empty()) {
+                // First ORB frame: seed buffer, push identity, skip stabilization
+                trajectory_.push_back(cv::Mat::eye(3, 3, CV_64F));
+                prev_kps_    = curr_kps;
+                curr_desc.copyTo(prev_desc_);
+                initialized_ = true;
+                ++frame_idx_;
+                ctx->flags.has_pose    = false;
+                ctx->flags.has_inliers = true;
+                return;
             }
+
+            if (ctx->optical_flow_result->tracking_just_seeded) {
+                // Seeding frame: reset trajectory, update buffer, skip warp
+                trajectory_.clear();
+                trajectory_.push_back(cv::Mat::eye(3, 3, CV_64F));
+                prev_kps_ = curr_kps;
+                curr_desc.copyTo(prev_desc_);
+                ctx->flags.has_inliers = true;
+                ++frame_idx_;
+                return;
+            }
+
+            // LK is preferred when available — it spans exactly one frame.
+            // Only use ORB adjacent-frame matching as fallback when LK has no result
+            // (e.g. immediately after a tracking loss before LK has caught up).
+            bool lk_available = ctx->optical_flow_result.has_value() &&
+                                 !ctx->optical_flow_result->points_prev.empty();
+            if (!lk_available) {
+                std::vector<std::vector<cv::DMatch>> knn_matches;
+                matcher_->knnMatch(prev_desc_, curr_desc, knn_matches, 2);
+                for (const auto& m : knn_matches) {
+                    if (m.size() < 2) continue;
+                    if (m[0].distance < lowe_ratio * m[1].distance) {
+                        pts_prev.push_back(prev_kps_[m[0].queryIdx].pt);
+                        pts_curr.push_back(curr_kps[m[0].trainIdx].pt);
+                    }
+                }
+            }
+
+            // Always update ORB buffer so future ORB-only frames have fresh descriptors
+            prev_kps_ = curr_kps;
+            cv::swap(prev_desc_, ctx->orb_result->descriptors);
+        }
+
+        // Prefer LK correspondences (single-frame motion, reliable at any speed)
+        if (pts_prev.empty() &&
+            ctx->optical_flow_result.has_value() &&
+            !ctx->optical_flow_result->points_prev.empty())
+        {
+            pts_prev = ctx->optical_flow_result->points_prev;
+            pts_curr = ctx->optical_flow_result->points_curr;
+        }
+
+        if (pts_prev.empty())
+        {
+            ctx->flags.has_inliers = true;
+            return;
         }
 
         // ED-RANSAC homography estimation
@@ -79,12 +113,19 @@ public:
                       << frame_idx_ << " — using identity.\n";
         }
 
+        if (ctx->optical_flow_result->tracking_reseeded) {
+            trajectory_.clear();
+            trajectory_.push_back(cv::Mat::eye(3, 3, CV_64F));
+        }
+
         // Accumulate trajectory: T[i] = H_inter(i-1→i) * T[i-1]
         cv::Mat T_curr = H_inter * trajectory_.back();
         trajectory_.push_back(T_curr.clone());
+        if ((int)trajectory_.size() > smooth_radius + 1)
+            trajectory_.erase(trajectory_.begin());
 
         // Smoothed trajectory (causal trailing-window average)
-        cv::Mat T_smooth = smooth_transform(frame_idx_);
+        cv::Mat T_smooth = smooth_transform();
 
         // Correction warp: what to apply to the raw frame
         cv::Mat warp = T_smooth * T_curr.inv();
@@ -97,17 +138,10 @@ public:
                             cv::BORDER_REPLICATE);
         ctx->frame = stabilized;
 
-        // Store result
         ctx->ransac_result.emplace();
-        ctx->ransac_result->homography = H_inter;
+        ctx->ransac_result->homography = warp;
         ctx->flags.has_inliers = true;
-
-        // Update previous-frame state (raw keypoints, not from warped frame)
-        prev_kps_  = curr_kps;
-        prev_desc_ = curr_desc.clone();
-
         ++frame_idx_;
-        dispatch(ctx);
     }
 
 private:
@@ -173,19 +207,15 @@ private:
         return cv::findHomography(ed_prev, ed_curr, 0);
     }
 
-    // Causal trailing-window average over the last smooth_radius trajectory entries
-    cv::Mat smooth_transform(std::size_t idx) const
+    // Causal trailing-window average over all retained trajectory entries
+    cv::Mat smooth_transform() const
     {
-        int from  = std::max(0, (int)idx - smooth_radius);
-        int to    = (int)idx;
+        if (trajectory_.empty()) return cv::Mat::eye(3, 3, CV_64F);
 
         cv::Mat sum = cv::Mat::zeros(3, 3, CV_64F);
-        int count = 0;
-        for (int i = from; i <= to && i < (int)trajectory_.size(); ++i) {
-            sum += trajectory_[i];
-            ++count;
-        }
+        for (const auto& T : trajectory_)
+            sum += T;
 
-        return count > 0 ? sum / (double)count : cv::Mat::eye(3, 3, CV_64F);
+        return sum / (double)trajectory_.size();
     }
 };

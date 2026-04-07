@@ -20,8 +20,8 @@
 
 class CaptureStage : public ThreadedStage {
 public:
-    CaptureStage(std::shared_ptr<Router> router, const Config& cfg)
-        : ThreadedStage("capture", std::move(router), 1)  // queue_size=1, unused by capture
+    CaptureStage(std::shared_ptr<Router> router, const Config& cfg, int cpu_affinity = -1)
+        : ThreadedStage("capture", std::move(router), 1, cpu_affinity)  // queue_size=1, unused by capture
         , source_(cfg.require<std::string>("input.source"))
         , loop_(cfg.get<bool>("input.loop", false))
     {}
@@ -37,7 +37,6 @@ protected:
     // Override the worker loop entirely: produce frames instead of consuming queue
     void run() override {
         uint64_t frame_id = 0;
-        cv::Mat  prev_frame;
 
         while (is_running()) {
             cv::VideoCapture cap = open_source();
@@ -53,9 +52,7 @@ protected:
                 }
 
                 ctx->frame_id        = frame_id++;
-                ctx->frame_prev      = prev_frame;
                 ctx->flags.from_input = true;
-                prev_frame           = ctx->frame.clone();
 
                 router()->dispatch(std::move(ctx));
             }

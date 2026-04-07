@@ -15,16 +15,18 @@
 #include <cstdint>
 #include <string>
 
-// Routing flags: set by stages. Signals what the next stage should do.
+// Routing flags: set by stages to control where the frame goes next.
+// Pipeline order: capture -> orb -> optical_flow -> pose -> ransac -> output
 struct RoutingFlags {
-    bool from_input       = false;    // Frame just captured - route to first processing stage - route to optical_flow
-    bool needs_redetect   = false;    // Optical flow lost tracking - run ORB
-    bool has_keypoints    = false;    // ORB stage completed
-    bool has_matches      = false;    // Matching stage completed
-    bool has_inliers      = false;    // RANSAC stage completed
-    bool has_pose         = false;    // Pose estimation completed
-    bool skip_processing  = false;    // Tracking was good - go straight to output
-    bool drop_frame       = false;    // Frame is unusable - discard
+    bool from_input       = false;    // Fresh from capture              -> route to "orb"
+    bool has_keypoints    = false;    // ORB done (active or passive)    -> route to "optical_flow"
+    bool skip_processing  = false;    // Optical flow done               -> route to "pose"
+    bool has_pose         = false;    // Pose done                       -> route to "ransac"
+    bool has_inliers      = false;    // RANSAC done                     -> route to "output"
+    bool drop_frame       = false;    // Frame is unusable               -> discard
+
+    // Informational only (not used for routing)
+    bool needs_redetect      = false;    // Optical flow lost tracking — ORB switched to active    // ORB active mode found DB matches  
 };
 
 // Optical flow result struct
@@ -34,6 +36,8 @@ struct OpticalFlowResult {
     std::vector<uchar>       status;                   // Per-point tracking status
     float                    tracking_score = 0.0f;
     cv::Point2f              suggested_center;    // Fraction of points tracked
+    bool tracking_just_seeded = false; 
+    bool tracking_reseeded = false;
 };
 
 // Oriented 'Features from Accelerated Segment Test (FAST)' and Rotated 'Binary Robust Independent Elementary Features (BRIEF)' (ORB) result
@@ -43,13 +47,15 @@ struct OrbResult {
     cv::Mat                   descriptors; // See docs for cv::Mat descriptor format
     std::vector<cv::KeyPoint> object_keypoints;
     cv::Mat                   object_descriptors;
+    cv::Size                  object_size;  // Reference image dimensions (for projecting center through H)
+    bool has_matches         = false;
 };
 
 // Matching result struct
 // For marches between two frames, or between frame and map points
 struct MatchingResult {
     std::vector<cv::DMatch> matches;        // After ratio test
-    std::vector<cv::DMatch> raw_matches;    // Before ratio test, for inspection
+    //std::vector<cv::DMatch> raw_matches;    // Before ratio test, for inspection
 };
 
 // RANSAC result stuct
@@ -81,7 +87,7 @@ struct FrameContext {
 
     // The raw frame data
     cv::Mat frame;         // Current frame (BGR)
-    cv::Mat frame_prev;    // Previous frame, if needed by flow
+    //cv::Mat frame_prev;    // Previous frame, if needed by flow
 
 
     // Stage results
