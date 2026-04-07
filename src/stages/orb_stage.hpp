@@ -98,9 +98,9 @@ public:
 
             // Lowe's ratio test
             std::vector<cv::DMatch> good_matches;
-            std::vector<cv::DMatch> raw_matches;
+            //std::vector<cv::DMatch> raw_matches;
             for (auto& m : knn_matches) {
-                if (!m.empty()) raw_matches.push_back(m[0]);
+                //if (!m.empty()) raw_matches.push_back(m[0]);
                 if (m.size() == 2 && m[0].distance < 0.75f * m[1].distance)
                     good_matches.push_back(m[0]);
             }
@@ -108,7 +108,7 @@ public:
             if (static_cast<int>(good_matches.size()) >= min_matches_) {
                 ctx->matching_result.emplace();
                 ctx->matching_result->matches     = std::move(good_matches);
-                ctx->matching_result->raw_matches = std::move(raw_matches);
+                //ctx->matching_result->raw_matches = std::move(raw_matches);
                 ctx->orb_result->object_keypoints = picture_db_->keypoints()[i];
                 ctx->orb_result->object_size      = picture_db_->sizes()[i];
                 ctx->flags.has_matches = true;

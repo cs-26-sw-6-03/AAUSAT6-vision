@@ -55,7 +55,7 @@ struct OrbResult {
 // For marches between two frames, or between frame and map points
 struct MatchingResult {
     std::vector<cv::DMatch> matches;        // After ratio test
-    std::vector<cv::DMatch> raw_matches;    // Before ratio test, for inspection
+    //std::vector<cv::DMatch> raw_matches;    // Before ratio test, for inspection
 };
 
 // RANSAC result stuct
