@@ -25,11 +25,7 @@ jobs:
             libyaml-cpp-dev \
             libunwind-dev \
             libgstreamer1.0-dev \
-            libgstreamer-plugins-base1.0-dev \
-            gstreamer1.0-plugins-good \
-            gstreamer1.0-plugins-bad \
-            gstreamer1.0-plugins-ugly \
-            gstreamer1.0-libav
+            libgstreamer-plugins-base1.0-dev
 
       - name: Configure
         env:
@@ -71,10 +67,6 @@ jobs:
                 libyaml-cpp-dev \
                 libunwind-dev \
                 libgstreamer1.0-dev \
-                libgstreamer-plugins-base1.0-dev \
-                gstreamer1.0-plugins-good \
-                gstreamer1.0-plugins-bad \
-                gstreamer1.0-plugins-ugly \
-                gstreamer1.0-libav && \
+                libgstreamer-plugins-base1.0-dev && \
               cmake -S . -B build-arm64 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF && \
               cmake --build build-arm64 --config Release -j"
