@@ -2,7 +2,7 @@ name: build on x86_84 and arm64 on Ubuntu 22.04
 
 on:
   push:
-    branches: ["**"]
+    branches: ["main"]
   pull_request:
 
 jobs:
