@@ -87,7 +87,7 @@ struct FrameContext {
 
     // The raw frame data
     cv::Mat frame;         // Current frame (BGR)
-    cv::Mat frame_prev;    // Previous frame, if needed by flow
+    //cv::Mat frame_prev;    // Previous frame, if needed by flow
 
 
     // Stage results
