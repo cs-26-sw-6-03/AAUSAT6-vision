@@ -1,6 +1,4 @@
 #pragma once
-
-#pragma once
  
 /*
  * output_stage.hpp
