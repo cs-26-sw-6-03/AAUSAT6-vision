@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: ubuntu-22.04
+    name: Build (GCC, x86_64, Ubuntu 22.04)
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
@@ -43,7 +43,7 @@ jobs:
           cmake --build build --config Release -j
 
   build_arm64:
-    name: ubuntu-22.04-arm64 (docker)
+    name: Build (GCC, arm64 via Docker/QEMU)
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     continue-on-error: true
@@ -75,3 +75,39 @@ jobs:
                 libgstreamer-plugins-base1.0-dev && \
               cmake -S . -B build-arm64 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF && \
               cmake --build build-arm64 --config Release -j"
+
+  build_clang:
+    name: Build (Clang, x86_64, Ubuntu 22.04)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          TZ: Etc/UTC
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            clang \
+            cmake \
+            pkg-config \
+            libopencv-dev \
+            libyaml-cpp-dev \
+            libunwind-dev \
+            libgstreamer1.0-dev \
+            libgstreamer-plugins-base1.0-dev
+
+      - name: Configure
+        env:
+          CC: clang
+          CXX: clang++
+        run: |
+          cmake -S . -B build-clang -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
+
+      - name: Build
+        run: |
+          cmake --build build-clang --config Release -j
