@@ -20,7 +20,7 @@ jobs:
           TZ: Etc/UTC
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
+          sudo apt-get install -y --no-install-recommends \
             build-essential \
             cmake \
             pkg-config \
@@ -63,7 +63,7 @@ jobs:
             ubuntu:22.04 bash -lc "\
               export DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC && \
               apt-get update && \
-              apt-get install -y \
+              apt-get install -y --no-install-recommends \
                 build-essential \
                 cmake \
                 pkg-config \
