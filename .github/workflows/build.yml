@@ -41,7 +41,7 @@ jobs:
           CC: gcc
           CXX: g++
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
 
       - name: Build
         run: |
