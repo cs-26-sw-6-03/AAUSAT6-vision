@@ -36,6 +36,7 @@
 
 #include "../pipeline/threadedstage.hpp"
 #include "../utils/config.hpp"
+#include "../utils/telemetry_logger.hpp"
 
 #include <gst/gst.h>
 #include <gst/app/gstappsrc.h>
@@ -183,6 +184,10 @@ public:
         }
 
         // Mark frame as fully handled so the router does not re-dispatch it.
+        if (!ctx->telemetry.logged) {
+            TelemetryLogger::instance().log_frame(*ctx);
+            ctx->telemetry.logged = true;
+        }
         ctx->flags.from_input = false;
         ctx->flags.drop_frame = true;
 

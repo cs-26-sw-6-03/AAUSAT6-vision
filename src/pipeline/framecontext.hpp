@@ -14,6 +14,7 @@
 #include <chrono>
 #include <cstdint>
 #include <string>
+#include <unordered_map>
 
 // Routing flags: set by stages to control where the frame goes next.
 // Pipeline order: capture -> orb -> optical_flow -> pose -> ransac -> output
@@ -78,6 +79,17 @@ struct PoseResult {
     float confidence = 0.f;
 };
 
+struct StageTiming {
+    std::chrono::steady_clock::time_point queue_enter{};
+    std::chrono::steady_clock::time_point queue_dequeue{};
+    std::chrono::steady_clock::time_point process_start{};
+    std::chrono::steady_clock::time_point process_end{};
+};
+
+struct FrameTelemetry {
+    std::unordered_map<std::string, StageTiming> per_stage;
+    bool logged = false;
+};
 
 struct FrameContext {
     // The frames identity
@@ -102,4 +114,7 @@ struct FrameContext {
 
     // Debug / Inspection frame data (annotated frame for visualisation)
     std::optional<cv::Mat> debug_frame;
+
+    // Telemetry attached to this frame for the entire pipeline traversal.
+    FrameTelemetry telemetry;
 };

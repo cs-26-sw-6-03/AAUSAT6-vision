@@ -6,6 +6,7 @@
 
 #include "router.hpp"
 #include <stdexcept>
+#include "../utils/telemetry_logger.hpp"
 
 void Router::register_stage(const std::string& name, std::shared_ptr<FrameQueue> queue) {
     queues_[name] = std::move(queue);
@@ -17,7 +18,14 @@ void Router::set_routing_fn(std::function<std::string(const FrameContext&)> fn) 
 
 bool Router::dispatch(std::shared_ptr<FrameContext> ctx) {
     if (!ctx) return false;
-    if (ctx->flags.drop_frame) return false;
+
+    if (ctx->flags.drop_frame) {
+        if (!ctx->telemetry.logged) {
+            TelemetryLogger::instance().log_frame(*ctx);
+            ctx->telemetry.logged = true;
+        }
+        return false;
+    }
 
     std::string target;
     if (routing_fn_) {
@@ -25,8 +33,13 @@ bool Router::dispatch(std::shared_ptr<FrameContext> ctx) {
     } else {
         target = default_route(*ctx);
     }
-
-    if (target.empty()) return false;
+    if (target.empty()) {
+        if (!ctx->telemetry.logged) {
+            TelemetryLogger::instance().log_frame(*ctx);
+            ctx->telemetry.logged = true;
+        }
+        return false;
+    }
 
     auto it = queues_.find(target);
     if (it == queues_.end()) {
