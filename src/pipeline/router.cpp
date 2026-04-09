@@ -7,6 +7,7 @@
 #include "router.hpp"
 #include <stdexcept>
 #include "../utils/telemetry_logger.hpp"
+#include <chrono>
 
 void Router::register_stage(const std::string& name, std::shared_ptr<FrameQueue> queue) {
     queues_[name] = std::move(queue);
@@ -46,6 +47,7 @@ bool Router::dispatch(std::shared_ptr<FrameContext> ctx) {
         throw std::runtime_error("Router: no queue registered for stage '" + target + "'");
     }
 
+    ctx->telemetry.per_stage[target].queue_enter = std::chrono::steady_clock::now();
     it->second->push(std::move(ctx));
     return true;
 }

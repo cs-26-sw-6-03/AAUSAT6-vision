@@ -93,15 +93,6 @@ void TelemetryLogger::log_frame(const FrameContext &ctx) {
 		out_ << "\"process_start_ns\":" << process_start_ns << ',';
 		out_ << "\"process_end_ns\":" << process_end_ns;
 
-		if (queue_enter_ns > 0 && queue_dequeue_ns >= queue_enter_ns) {
-			double q_ms = static_cast<double>(queue_dequeue_ns - queue_enter_ns) / 1e6;
-			out_ << ",\"queue_ms\":" << q_ms;
-		}
-		if (process_start_ns > 0 && process_end_ns >= process_start_ns) {
-			double p_ms = static_cast<double>(process_end_ns - process_start_ns) / 1e6;
-			out_ << ",\"process_ms\":" << p_ms;
-		}
-
 		out_ << '}';
 	}
 
