@@ -20,7 +20,7 @@ void Router::set_routing_fn(std::function<std::string(const FrameContext&)> fn) 
 bool Router::dispatch(std::shared_ptr<FrameContext> ctx) {
     if (!ctx) return false;
 
-    if (ctx->flags.drop_frame) {
+    if (ctx->flags.done || ctx->flags.drop_frame) {
         if (!ctx->telemetry.logged) {
             TelemetryLogger::instance().log_frame(*ctx);
             ctx->telemetry.logged = true;

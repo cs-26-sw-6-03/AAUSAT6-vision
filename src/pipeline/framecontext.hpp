@@ -24,7 +24,8 @@ struct RoutingFlags {
     bool skip_processing  = false;    // Optical flow done               -> route to "pose"
     bool has_pose         = false;    // Pose done                       -> route to "ransac"
     bool has_inliers      = false;    // RANSAC done                     -> route to "output"
-    bool drop_frame       = false;    // Frame is unusable               -> discard
+    bool done             = false;    // Frame completed successfully     -> emit telemetry + stop
+    bool drop_frame       = false;    // Frame is unusable / error        -> discard (and emit telemetry)
 
     // Informational only (not used for routing)
     bool needs_redetect      = false;    // Optical flow lost tracking — ORB switched to active    // ORB active mode found DB matches  

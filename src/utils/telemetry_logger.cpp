@@ -69,6 +69,8 @@ void TelemetryLogger::log_frame(const FrameContext &ctx) {
 	out_ << "\"frame_id\":" << ctx.frame_id << ',';
 	out_ << "\"source_id\":\"" << escape_json(ctx.source_id) << "\",";
 	out_ << "\"capture_time_ns\":" << to_ns(ctx.timestamp) << ',';
+	const char* status = ctx.flags.drop_frame ? "dropped" : (ctx.flags.done ? "done" : "in_flight");
+	out_ << "\"status\":\"" << status << "\",";
 	out_ << "\"dropped\":" << (ctx.flags.drop_frame ? "true" : "false") << ',';
 
 	out_ << "\"stages\":{";

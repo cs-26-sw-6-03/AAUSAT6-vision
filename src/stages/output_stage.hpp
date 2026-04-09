@@ -184,7 +184,7 @@ public:
 
         // Mark frame as fully handled so the router does not re-dispatch it.
         ctx->flags.from_input = false;
-        ctx->flags.drop_frame = true;
+        ctx->flags.done = true;
 
         // Progress indicator in the terminal.
         if (frame_count_ % 30 == 0) { // Print to stdout for some kind of feedback
