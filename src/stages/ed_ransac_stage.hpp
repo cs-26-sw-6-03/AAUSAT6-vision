@@ -16,6 +16,8 @@ public:
         ed_threshold         = cfg.get<float>("stabilizer.ed_threshold", 0.5f);
         min_inliers          = cfg.get<int>("stabilizer.min_inlies", 10);
         smooth_radius        = cfg.get<int>("stabilizer.smooth_radius", 15);
+        ransac_max_iters     = cfg.get<int>("stabilizer.max_iterations", 2000);
+        ransac_confidence    = cfg.get<double>("stabilizer.confidence", 0.995);
     }
 
     void init() override
@@ -151,6 +153,8 @@ private:
     float  ed_threshold          = 0.5f;  // pixels
     int    min_inliers           = 10;
     int    smooth_radius         = 15;    // trailing frames
+    int    ransac_max_iters      = 2000;
+    double ransac_confidence     = 0.995;
 
     cv::Ptr<cv::BFMatcher> matcher_;
 
@@ -176,7 +180,9 @@ private:
         cv::Mat H = cv::findHomography(pts_prev, pts_curr,
                                        cv::RANSAC,
                                        ransac_reproj_thresh,
-                                       inlier_mask);
+                                       inlier_mask,
+                                       ransac_max_iters,
+                                       ransac_confidence);
         if (H.empty()) return {};
 
         std::vector<cv::Point2f> inl_prev, inl_curr;

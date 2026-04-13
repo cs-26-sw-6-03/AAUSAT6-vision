@@ -27,15 +27,22 @@ orb:
   min_matches: 8          # Minimum good matches after ratio test to count as a valid detection
   detect_every: 60         # Run detection every N frames; skipped frames pass to optical flow for continued tracking
 
+
 matching:
   hamming_ratio_test: 0.75   # Lowe's ratio test threshold
   cross_check: false
 
 ransac:
   method: EG_RANSAC          # RANSAC | EG_RANSAC | USAC_MAGSAC
-  reproj_threshold: 3.0
-  confidence: 0.99
-  max_iterations: 2000
+
+stabilizer:
+  lowe_ratio: 0.75            # Lowe's ratio test threshold for ORB fallback matching
+  reprojection_threshold: 3.0 # RANSAC pass 1 inlier threshold (pixels); higher = faster convergence
+  ed_threshold: 0.5           # Pass 2 Euclidean distance filter (pixels)
+  min_inlies: 10              # Minimum inliers required at each stage
+  smooth_radius: 15           # Trailing frames used for trajectory smoothing
+  max_iterations: 2000        # RANSAC max iterations; reduce (e.g. 500) to cut compute time
+  confidence: 0.995
 
 pose:
   enabled: true
