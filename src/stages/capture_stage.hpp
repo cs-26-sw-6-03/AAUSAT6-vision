@@ -17,6 +17,7 @@
 #include <opencv2/videoio.hpp>
 #include <stdexcept>
 #include <string>
+#include <chrono>
 
 class CaptureStage : public ThreadedStage {
 public:
@@ -42,14 +43,20 @@ protected:
             cv::VideoCapture cap = open_source();
 
             while (is_running()) {
+                auto capture_start = std::chrono::steady_clock::now();
+
                 auto ctx       = std::make_shared<FrameContext>();
                 ctx->source_id = source_;
-                ctx->timestamp = std::chrono::steady_clock::now();
+                ctx->timestamp = capture_start;
 
                 if (!cap.read(ctx->frame) || ctx->frame.empty()) {
                     if (loop_) break;   // reopen source
                     return;             // source exhausted — exit naturally
                 }
+
+                auto &timing = ctx->telemetry.per_stage["capture"];
+                timing.process_start = capture_start;
+                timing.process_end   = std::chrono::steady_clock::now();
 
                 ctx->frame_id        = frame_id++;
                 ctx->flags.from_input = true;
