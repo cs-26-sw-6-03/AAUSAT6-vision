@@ -34,8 +34,6 @@ matching:
 
 ransac:
   method: EG_RANSAC          # RANSAC | EG_RANSAC | USAC_MAGSAC
-
-stabilizer:
   lowe_ratio: 0.75            # Lowe's ratio test threshold for ORB fallback matching
   reprojection_threshold: 3.0 # RANSAC pass 1 inlier threshold (pixels); higher = faster convergence
   ed_threshold: 0.5           # Pass 2 Euclidean distance filter (pixels)

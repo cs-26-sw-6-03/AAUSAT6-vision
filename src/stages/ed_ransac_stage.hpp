@@ -11,13 +11,13 @@ public:
     EdRansacStage(std::shared_ptr<Router> router, const Config &cfg, int cpu_affinity = -1)
         : ThreadedStage("ransac", std::move(router), cfg.get<int>("pipeline.queue_size", 32), cpu_affinity)
     {
-        lowe_ratio           = cfg.get<float>("stabilizer.lowe_ratio", 0.75f);
-        ransac_reproj_thresh = cfg.get<float>("stabilizer.reprojection_threshold", 3.0);
-        ed_threshold         = cfg.get<float>("stabilizer.ed_threshold", 0.5f);
-        min_inliers          = cfg.get<int>("stabilizer.min_inlies", 10);
-        smooth_radius        = cfg.get<int>("stabilizer.smooth_radius", 15);
-        ransac_max_iters     = cfg.get<int>("stabilizer.max_iterations", 2000);
-        ransac_confidence    = cfg.get<double>("stabilizer.confidence", 0.995);
+        lowe_ratio           = cfg.get<float>("ransac.lowe_ratio", 0.75f);
+        ransac_reproj_thresh = cfg.get<float>("ransac.reprojection_threshold", 3.0);
+        ed_threshold         = cfg.get<float>("ransac.ed_threshold", 0.5f);
+        min_inliers          = cfg.get<int>("ransac.min_inlies", 10);
+        smooth_radius        = cfg.get<int>("ransac.smooth_radius", 15);
+        ransac_max_iters     = cfg.get<int>("ransac.max_iterations", 2000);
+        ransac_confidence    = cfg.get<double>("ransac.confidence", 0.995);
     }
 
     void init() override
