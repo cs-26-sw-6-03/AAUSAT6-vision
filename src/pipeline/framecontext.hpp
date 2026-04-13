@@ -14,6 +14,7 @@
 #include <chrono>
 #include <cstdint>
 #include <string>
+#include <unordered_map>
 
 // Routing flags: set by stages to control where the frame goes next.
 // Pipeline order: capture -> orb -> optical_flow -> pose -> ransac -> output
@@ -23,7 +24,8 @@ struct RoutingFlags {
     bool skip_processing  = false;    // Optical flow done               -> route to "pose"
     bool has_pose         = false;    // Pose done                       -> route to "ransac"
     bool has_inliers      = false;    // RANSAC done                     -> route to "output"
-    bool drop_frame       = false;    // Frame is unusable               -> discard
+    bool done             = false;    // Frame completed successfully     -> emit telemetry + stop
+    bool drop_frame       = false;    // Frame is unusable / error        -> discard (and emit telemetry)
 
     // Informational only (not used for routing)
     bool needs_redetect      = false;    // Optical flow lost tracking — ORB switched to active    // ORB active mode found DB matches  
@@ -78,6 +80,17 @@ struct PoseResult {
     float confidence = 0.f;
 };
 
+struct StageTiming {
+    std::chrono::steady_clock::time_point queue_enter{};
+    std::chrono::steady_clock::time_point queue_dequeue{};
+    std::chrono::steady_clock::time_point process_start{};
+    std::chrono::steady_clock::time_point process_end{};
+};
+
+struct FrameTelemetry {
+    std::unordered_map<std::string, StageTiming> per_stage;
+    bool logged = false;
+};
 
 struct FrameContext {
     // The frames identity
@@ -102,4 +115,7 @@ struct FrameContext {
 
     // Debug / Inspection frame data (annotated frame for visualisation)
     std::optional<cv::Mat> debug_frame;
+
+    // Telemetry attached to this frame for the entire pipeline traversal.
+    FrameTelemetry telemetry;
 };

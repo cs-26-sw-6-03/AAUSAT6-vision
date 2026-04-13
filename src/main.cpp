@@ -4,6 +4,7 @@
 
 #include <opencv2/core.hpp>
 #include "pipeline/pipeline.hpp"
+#include "utils/telemetry_logger.hpp"
 
 // --- Stages ---
 #include "stages/capture_stage.hpp"
@@ -32,6 +33,13 @@ int main(int argc, char* argv[]) {
     }
     std::cout << "aausat6-vision starting\n";
     std::cout << "Config:  " << cfg.path() << "\n";
+
+    // --- Telemetry ---
+    {
+        bool telemetry_enabled = cfg.get<bool>("telemetry.enabled", false);
+        std::string telemetry_file = cfg.get<std::string>("telemetry.file", "");
+        TelemetryLogger::instance().init(telemetry_enabled, telemetry_file);
+    }
 
     // --- Signal handling ---
     std::signal(SIGINT,  signal_handler);

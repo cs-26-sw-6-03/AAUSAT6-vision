@@ -65,3 +65,7 @@ db:
 logging:
   level: info                # debug | info | warn | error
   file: ""                   # Empty = stdout only
+
+telemetry:
+  enabled: false
+  file: "/tmp/telemetry.jsonl"
