@@ -11,7 +11,8 @@
 #include "stages/orb_stage.hpp"
 #include "stages/optical_flow_stage.hpp"
 #include "stages/pose_stage.hpp"
-#include "stages/ed_ransac_stage.hpp"
+#include "stages/stabilizer_stage.hpp"
+#include "stages/warp_apply_stage.hpp"
 #include "stages/output_stage.hpp"
 
 static std::atomic<bool> g_shutdown{false};
@@ -56,13 +57,14 @@ int main(int argc, char* argv[]) {
     // once a valid detection is found, and back to active when tracking is lost.
     auto orb_mode = std::make_shared<std::atomic<bool>>(true);
 
-    // Stage order: capture -> orb -> optical_flow -> pose -> ransac -> output
+    // Stage order: capture -> orb -> optical_flow -> ransac -> warp_apply -> pose -> output
     pipeline.add_stage(std::make_shared<CaptureStage>     (pipeline.router(), cfg, 0));
     pipeline.add_stage(std::make_shared<OrbStage>         (pipeline.router(), cfg, orb_mode, 1));
     pipeline.add_stage(std::make_shared<OpticalFlowStage> (pipeline.router(), cfg, orb_mode, 2));
-    pipeline.add_stage(std::make_shared<PoseStage>        (pipeline.router(), cfg, 3));
-    pipeline.add_stage(std::make_shared<EdRansacStage>    (pipeline.router(), cfg, 4));
-    pipeline.add_stage(std::make_shared<OutputStage>      (pipeline.router(), cfg, 3));
+    pipeline.add_stage(std::make_shared<AffineEstimatorStage>(pipeline.router(), cfg, 3));
+    pipeline.add_stage(std::make_shared<WarpApplyStage>      (pipeline.router(), cfg, 4));
+    pipeline.add_stage(std::make_shared<PoseStage>        (pipeline.router(), cfg, 1));
+    pipeline.add_stage(std::make_shared<OutputStage>         (pipeline.router(), cfg, 1));
 
     pipeline.start();
 
