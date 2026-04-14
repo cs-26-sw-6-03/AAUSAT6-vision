@@ -27,9 +27,12 @@ public:
         : ThreadedStage("ransac", std::move(router),
                         cfg.get<int>("pipeline.queue_size", 32), cpu_affinity)
     {
-        reproj_threshold_ = cfg.get<float> ("stabilizer.reproj_threshold", 3.0f);
-        min_inliers_      = cfg.get<int>   ("stabilizer.min_inliers",      6);
-        alpha_            = cfg.get<double>("stabilizer.smoothing",         0.05);
+        reproj_threshold_  = cfg.get<float> ("stabilizer.reproj_threshold", 3.0f);
+        min_inliers_       = cfg.get<int>   ("stabilizer.min_inliers",      6);
+        alpha_             = cfg.get<double>("stabilizer.smoothing",         0.05);
+        max_iterations_    = cfg.get<int>("stabilizer.max_iterations",         2000);
+        confidence_        = cfg.get<double>("stabilizer.confidence",         0.995);
+        refine_iterations_ = cfg.get<int>("stabilizer.refine_iterations",         10);
     }
 
     void init() override
@@ -80,7 +83,7 @@ public:
         cv::Mat M23 = cv::estimateAffinePartial2D(
             pts_prev, pts_curr,
             cv::noArray(), cv::RANSAC, reproj_threshold_,
-            2000, 0.995, 10);
+            max_iterations_, confidence_, refine_iterations_);
 
         cv::Mat M33 = cv::Mat::eye(3, 3, CV_64F);
         if (!M23.empty())
@@ -111,6 +114,9 @@ private:
     float  reproj_threshold_ = 3.0f;
     int    min_inliers_      = 6;
     double alpha_            = 0.05;
+    int    max_iterations_;
+    double confidence_;
+    int    refine_iterations_;
 
     cv::Mat     T_smooth_;
     cv::Mat     T_prev_;
