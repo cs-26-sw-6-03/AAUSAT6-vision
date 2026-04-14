@@ -36,6 +36,9 @@ stabilizer:
   reproj_threshold: 3.0   # estimateAffinePartial2D RANSAC threshold (pixels)
   min_inliers: 6           # Minimum LK points required to attempt estimation
   smoothing: 0.05          # EMA alpha (lower = smoother, typical: 0.03-0.10)
+  max_iterations: 2000
+  confidence: 0.995
+  refine_iterations: 10
 
 #Used for ED Ransac stabilizer
 ransac:
