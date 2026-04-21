@@ -30,6 +30,7 @@ public:
         // Always emplace pose_result and set has_pose so the frame continues to output
         auto& pr = ctx->pose_result.emplace();
         pr.valid  = false;
+        pr.confidence = 0.f;
         ctx->flags.has_pose        = true;
         ctx->flags.skip_processing = false;
 
@@ -48,6 +49,12 @@ public:
             Point2f center = smoothed_initialized_
                 ? stabilizedCenter(ctx)
                 : Point2f(ctx->frame.cols / 2.f, ctx->frame.rows / 2.f);
+
+            // In passive mode, we still output a best-effort center each frame.
+            pr.center = center;
+            pr.valid = smoothed_initialized_; // "valid" means we have a tracked center.
+            pr.confidence = 0.f;
+
             crop(ctx, center);
             return;
         }
