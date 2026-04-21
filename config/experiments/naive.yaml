@@ -1,0 +1,20 @@
+input:
+    source: "/home/digita/projects/AAUSAT6-C-/jitter30.mp4"
+
+orb:
+  n_features: 400
+  detect_every: 1
+
+#ransac:
+ #   method: EG_RANSAC          # RANSAC | EG_RANSAC | USAC_MAGSAC
+  #  lowe_ratio: 0.75            # Lowe's ratio test threshold for ORB fallback matching
+   # reprojection_threshold: 3.0 # RANSAC pass 1 inlier threshold (pixels); higher = faster convergence
+    #ed_threshold: 0.5           # Pass 2 Euclidean distance filter (pixels)
+    #min_inlies: 10              # Minimum inliers required at each stage
+    #smooth_radius: 15      # Trailing frames used for trajectory smoothing
+    #max_iterations: 2000      # RANSAC max iterations; reduce (e.g. 500) to cut compute time
+    #confidence: 0.995
+
+telemetry:
+    enabled: true
+    file: "400-300-11-2-jitter30.json"
