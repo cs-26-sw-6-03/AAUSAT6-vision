@@ -73,6 +73,17 @@ void TelemetryLogger::log_frame(const FrameContext &ctx) {
 	out_ << "\"status\":\"" << status << "\",";
 	out_ << "\"dropped\":" << (ctx.flags.drop_frame ? "true" : "false") << ',';
 
+	// Pose center (when available)
+	if (ctx.pose_result.has_value()) {
+		out_ << "\"pose\":{";
+		out_ << "\"valid\":" << (ctx.pose_result->valid ? "true" : "false") << ',';
+		out_ << "\"confidence\":" << ctx.pose_result->confidence << ',';
+		out_ << "\"center\":{";
+		out_ << "\"x\":" << ctx.pose_result->center.x << ',';
+		out_ << "\"y\":" << ctx.pose_result->center.y;
+		out_ << "}} ,";
+	}
+
 	out_ << "\"stages\":{";
 	bool first_stage = true;
 	for (const auto &kv : ctx.telemetry.per_stage) {
@@ -101,5 +112,4 @@ void TelemetryLogger::log_frame(const FrameContext &ctx) {
 	out_ << "}}\n";
 	out_.flush();
 }
-
 
