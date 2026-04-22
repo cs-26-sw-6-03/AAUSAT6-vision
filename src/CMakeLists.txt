@@ -19,6 +19,7 @@ add_library(vision_lib STATIC
     # db/DBSerializer.cpp
 
     # Utils
+    utils/telemetry_logger.cpp
     # utils/Logger.cpp
     # utils/Config.cpp     <- header-only for now, add .cpp here if needed
 )

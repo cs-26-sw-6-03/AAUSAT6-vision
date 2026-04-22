@@ -25,13 +25,17 @@ void PictureDB::refresh(cv::Ptr<cv::ORB> orb) {
         cv::Mat img = cv::imread(entry.path().string());
         if (img.empty()) continue;  // skip unreadable files
 
+        cv::Mat gray;
+        cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
+
         std::vector<cv::KeyPoint> kps;
         cv::Mat desc;
-        orb->detectAndCompute(img, cv::noArray(), kps, desc);
+        orb->detectAndCompute(gray, cv::noArray(), kps, desc);
 
         size_t idx = keypoints_.size();
         keypoints_.push_back(std::move(kps));
         descriptors_.push_back(std::move(desc));
+        sizes_.push_back(img.size());
         file_index_map_[relative] = idx;
     }
 }

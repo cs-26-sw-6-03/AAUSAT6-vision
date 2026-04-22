@@ -17,11 +17,12 @@
 #include <opencv2/videoio.hpp>
 #include <stdexcept>
 #include <string>
+#include <chrono>
 
 class CaptureStage : public ThreadedStage {
 public:
-    CaptureStage(std::shared_ptr<Router> router, const Config& cfg)
-        : ThreadedStage("capture", std::move(router), 1)  // queue_size=1, unused by capture
+    CaptureStage(std::shared_ptr<Router> router, const Config& cfg, int cpu_affinity = -1)
+        : ThreadedStage("capture", std::move(router), 1, cpu_affinity)  // queue_size=1, unused by capture
         , source_(cfg.require<std::string>("input.source"))
         , loop_(cfg.get<bool>("input.loop", false))
     {}
@@ -37,25 +38,28 @@ protected:
     // Override the worker loop entirely: produce frames instead of consuming queue
     void run() override {
         uint64_t frame_id = 0;
-        cv::Mat  prev_frame;
 
         while (is_running()) {
             cv::VideoCapture cap = open_source();
 
             while (is_running()) {
+                auto capture_start = std::chrono::steady_clock::now();
+
                 auto ctx       = std::make_shared<FrameContext>();
                 ctx->source_id = source_;
-                ctx->timestamp = std::chrono::steady_clock::now();
+                ctx->timestamp = capture_start;
 
                 if (!cap.read(ctx->frame) || ctx->frame.empty()) {
                     if (loop_) break;   // reopen source
                     return;             // source exhausted — exit naturally
                 }
 
+                auto &timing = ctx->telemetry.per_stage["capture"];
+                timing.process_start = capture_start;
+                timing.process_end   = std::chrono::steady_clock::now();
+
                 ctx->frame_id        = frame_id++;
-                ctx->frame_prev      = prev_frame;
                 ctx->flags.from_input = true;
-                prev_frame           = ctx->frame.clone();
 
                 // Route the frame into the pipeline
                 router()->dispatch(std::move(ctx));

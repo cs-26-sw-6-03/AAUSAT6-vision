@@ -1,7 +1,14 @@
 input:
-    source: "/home/sebas/git/hub/cs-26-sw-6-03/Untitled.mp4"
+    source: "/home/sebas/git/hub/cs-26-sw-6-03/video.mp4"
+
+pictures:
+    path: "/home/sebas/git/hub/cs-26-sw-6-03/img/"
+
 output:
     mode: "file"
     crop: true
     file:
         path: "/home/sebas/git/hub/cs-26-sw-6-03/output.mp4"
+
+orb:
+  n_features: 400
