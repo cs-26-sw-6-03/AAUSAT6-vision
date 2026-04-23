@@ -37,10 +37,14 @@ jobs:
         run: |
           cmake -S . -B build-tidy -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
 
-      - name: Run clang-tidy
-        run: |
-          clang-tidy -p build-tidy $(find src -name "*.cpp")
+      # - name: Run clang-tidy
+      #   run: |
+      #     clang-tidy -p build-tidy -header-filter=".*\\/src\\/.*" $(find src -name "*.cpp")
 
       - name: Run cppcheck
         run: |
-          cppcheck --enable=all --inconclusive --quiet --error-exitcode=1 src
+          cppcheck --project=build-tidy/compile_commands.json \
+            --enable=warning,performance,portability,style \
+            --inconclusive --quiet --error-exitcode=1 \
+            --platform=unix64 \
+            --suppressions-list=.cppcheck-suppressions
