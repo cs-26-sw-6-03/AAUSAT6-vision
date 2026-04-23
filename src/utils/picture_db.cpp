@@ -6,7 +6,7 @@ PictureDB::PictureDB(std::filesystem::path path_to_pictures)
     : pictures_path_(std::move(path_to_pictures))
 {}
 
-cv::Mat PictureDB::get_raw_frame(std::filesystem::path relative_path) {
+cv::Mat PictureDB::get_raw_frame(std::filesystem::path relative_path) const {
     auto full_path = pictures_path_ / relative_path;
     cv::Mat img = cv::imread(full_path.string());
     if (img.empty()) {
