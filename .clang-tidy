@@ -1,0 +1,23 @@
+Checks: |-
+  -*,
+  clang-analyzer-*,
+  bugprone-*,
+  performance-*,
+  readability-*,
+  modernize-*,
+  misc-*,
+  # Disabled checks
+  -modernize-use-nodiscard,
+  -modernize-use-trailing-return-type,
+  -misc-header-include-cycle,
+  -misc-include-cleaner
+  -readability-nested-namespace
+  -readability-function-cognitive-complexity
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*\/src\/.*'
+SystemHeaders: false
+FormatStyle: none
+CheckOptions:
+  - key: modernize-use-auto.MinTypeNameLength
+    value: '0'
+ExtraArgs: ['--std=c++17']

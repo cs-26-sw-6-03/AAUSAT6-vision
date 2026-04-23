@@ -50,3 +50,18 @@ cmake -B build/Release -DCMAKE_BUILD_TYPE=Release && cmake --build build/Release
 
 1. Find the script
 2. Run with extra configs like `build/Release/src/vision config/default.yaml config/experiments/naitsa.yaml`
+
+## Run linters
+
+```bash
+# clang tidy
+cmake -S . -B build-tidy -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
+clang-tidy -p build-tidy -header-filter=".*\/src\/.*" $(find src -name "*.cpp")
+
+# cppcheck
+cppcheck --project=build-tidy/compile_commands.json \
+  --enable=warning,performance,portability,style \
+  --inconclusive --quiet --error-exitcode=1 \
+  --platform=unix64 \
+  --suppressions-list=.cppcheck-suppressions
+```
