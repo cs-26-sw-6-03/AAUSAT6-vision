@@ -40,6 +40,9 @@ stabilizer:
   max_iterations: 2000
   confidence: 0.995
   refine_iterations: 10
+  deadband_translation_px: 0.75  # Ignore tiny translations (pixels)
+  deadband_rotation_deg: 0.15    # Ignore tiny rotations (degrees)
+  deadband_scale: 0.002          # Ignore tiny scale changes (unitless)
 
 #Used for ED Ransac stabilizer
 ransac:

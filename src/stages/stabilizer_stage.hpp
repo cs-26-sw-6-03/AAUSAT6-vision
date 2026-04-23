@@ -3,6 +3,7 @@
 #include "../pipeline/threadedstage.hpp"
 #include "../utils/config.hpp"
 #include <iostream>
+#include <cmath>
 #include <opencv2/calib3d.hpp>
 #include <opencv2/opencv.hpp>
 
@@ -31,6 +32,9 @@ class AffineEstimatorStage : public ThreadedStage {
         , max_iterations_(cfg.get<int>("stabilizer.max_iterations", 2000))
         , confidence_(cfg.get<double>("stabilizer.confidence", 0.995))
         , refine_iterations_(cfg.get<int>("stabilizer.refine_iterations", 10))
+        , deadband_translation_px_(cfg.get<double>("stabilizer.deadband_translation_px", 0.75))
+        , deadband_rotation_deg_(cfg.get<double>("stabilizer.deadband_rotation_deg", 0.15))
+        , deadband_scale_(cfg.get<double>("stabilizer.deadband_scale", 0.002))
         {}
 
     void init() override {
@@ -82,11 +86,27 @@ class AffineEstimatorStage : public ThreadedStage {
             max_iterations_, confidence_, refine_iterations_);
 
         cv::Mat M33 = cv::Mat::eye(3, 3, CV_64F);
-        if (!M23.empty())
-            M23.copyTo(M33.rowRange(0, 2));
-        else
+        if (!M23.empty()) {
+            const double a = M23.at<double>(0, 0);
+            const double b = M23.at<double>(1, 0);
+            const double tx = M23.at<double>(0, 2);
+            const double ty = M23.at<double>(1, 2);
+            const double scale = std::sqrt(a * a + b * b);
+            const double rot_deg = std::atan2(b, a) * 180.0 / CV_PI;
+
+            const bool is_small_motion =
+                std::abs(tx) <= deadband_translation_px_ &&
+                std::abs(ty) <= deadband_translation_px_ &&
+                std::abs(rot_deg) <= deadband_rotation_deg_ &&
+                std::abs(scale - 1.0) <= deadband_scale_;
+
+            if (!is_small_motion) {
+                M23.copyTo(M33.rowRange(0, 2));
+            }
+        } else {
             std::cerr << "[AffineEstimatorStage] estimation failed at frame "
                       << frame_idx_ << " — using identity\n";
+        }
 
         // Accumulate trajectory: T_curr = M_inter * T_prev
         cv::Mat T_curr = M33 * T_prev_;
@@ -114,6 +134,9 @@ class AffineEstimatorStage : public ThreadedStage {
     int max_iterations_;
     double confidence_;
     int refine_iterations_;
+    double deadband_translation_px_;
+    double deadband_rotation_deg_;
+    double deadband_scale_;
 
     cv::Mat T_smooth_;
     cv::Mat T_prev_;

@@ -1,5 +1,6 @@
 input:
-    source: "/home/sebas/git/hub/cs-26-sw-6-03/video.mp4"
+    #source: "/home/sebas/git/hub/cs-26-sw-6-03/jitter30.mp4"
+    source: "/home/sebas/git/hub/cs-26-sw-6-03/video30.mp4"
 
 pictures:
     path: "/home/sebas/git/hub/cs-26-sw-6-03/img/"
@@ -17,8 +18,15 @@ orb:
   detect_every: 300
 
 optical_flow:
-    win_size: 11
-    pyr_levels: 2
+  win_size: 41
+  pyr_levels: 5
+
+stabilizer:
+  reproj_threshold: 3.0
+  min_inliers: 15
+  deadband_translation_px: 0.75
+  deadband_rotation_deg: 0.15
+  deadband_scale: 0.002
 
 telemetry:
     enabled: false
