@@ -31,6 +31,7 @@ orb:
 matching:
   hamming_ratio_test: 0.75   # Lowe's ratio test threshold
   cross_check: false
+
 #Used for multi stage stabilizer
 stabilizer:
   reproj_threshold: 3.0   # estimateAffinePartial2D RANSAC threshold (pixels)

@@ -6,9 +6,20 @@ pictures:
 
 output:
     mode: "file"
-    crop: true
     file:
         path: "/home/sebas/git/hub/cs-26-sw-6-03/output.mp4"
 
+pipeline:
+  queue_size: 4
+
 orb:
   n_features: 400
+  detect_every: 300
+
+optical_flow:
+    win_size: 11
+    pyr_levels: 2
+
+telemetry:
+    enabled: false
+    file: "400-300-11-2-jitter30.json"
