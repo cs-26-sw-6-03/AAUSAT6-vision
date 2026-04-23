@@ -32,6 +32,19 @@ matching:
   hamming_ratio_test: 0.75   # Lowe's ratio test threshold
   cross_check: false
 
+#Used for multi stage stabilizer
+stabilizer:
+  reproj_threshold: 3.0   # estimateAffinePartial2D RANSAC threshold (pixels)
+  min_inliers: 6           # Minimum LK points required to attempt estimation
+  smoothing: 0.05          # EMA alpha (lower = smoother, typical: 0.03-0.10)
+  max_iterations: 2000
+  confidence: 0.995
+  refine_iterations: 10
+  deadband_translation_px: 0.75  # Ignore tiny translations (pixels)
+  deadband_rotation_deg: 0.15    # Ignore tiny rotations (degrees)
+  deadband_scale: 0.002          # Ignore tiny scale changes (unitless)
+
+#Used for ED Ransac stabilizer
 ransac:
   method: EG_RANSAC          # RANSAC | EG_RANSAC | USAC_MAGSAC
   lowe_ratio: 0.75            # Lowe's ratio test threshold for ORB fallback matching
@@ -41,6 +54,7 @@ ransac:
   smooth_radius: 15           # Trailing frames used for trajectory smoothing
   max_iterations: 2000        # RANSAC max iterations; reduce (e.g. 500) to cut compute time
   confidence: 0.995
+
 
 pose:
   enabled: true

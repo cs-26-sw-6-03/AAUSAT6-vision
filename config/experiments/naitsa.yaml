@@ -1,14 +1,33 @@
 input:
-    source: "/home/sebas/git/hub/cs-26-sw-6-03/video.mp4"
+    #source: "/home/sebas/git/hub/cs-26-sw-6-03/jitter30.mp4"
+    source: "/home/sebas/git/hub/cs-26-sw-6-03/video30.mp4"
 
 pictures:
     path: "/home/sebas/git/hub/cs-26-sw-6-03/img/"
 
 output:
     mode: "file"
-    crop: true
     file:
         path: "/home/sebas/git/hub/cs-26-sw-6-03/output.mp4"
 
+pipeline:
+  queue_size: 4
+
 orb:
   n_features: 400
+  detect_every: 300
+
+optical_flow:
+  win_size: 41
+  pyr_levels: 5
+
+stabilizer:
+  reproj_threshold: 3.0
+  min_inliers: 15
+  deadband_translation_px: 0.75
+  deadband_rotation_deg: 0.15
+  deadband_scale: 0.002
+
+telemetry:
+    enabled: false
+    file: "400-300-11-2-jitter30.json"

@@ -22,8 +22,9 @@ struct RoutingFlags {
     bool from_input       = false;    // Fresh from capture              -> route to "orb"
     bool has_keypoints    = false;    // ORB done (active or passive)    -> route to "optical_flow"
     bool skip_processing  = false;    // Optical flow done               -> route to "pose"
-    bool has_pose         = false;    // Pose done                       -> route to "ransac"
-    bool has_inliers      = false;    // RANSAC done                     -> route to "output"
+    bool has_warp         = false;    // Affine estimated                -> route to "warp_apply"
+    bool has_pose         = false;    // Pose done                       -> route to "output"
+    bool has_inliers      = false;    // Warp applied                    -> route to "pose"
     bool done             = false;    // Frame completed successfully     -> emit telemetry + stop
     bool drop_frame       = false;    // Frame is unusable / error        -> discard (and emit telemetry)
 
