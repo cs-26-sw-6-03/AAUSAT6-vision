@@ -33,7 +33,7 @@ public:
     void set_routing_fn(std::function<std::string(const FrameContext&)> fn);
 
 private:
-    std::string default_route(const FrameContext& ctx) const;
+    static std::string default_route(const FrameContext& ctx);
 
     std::unordered_map<std::string, std::shared_ptr<FrameQueue>> queues_;
     std::function<std::string(const FrameContext&)>              routing_fn_;

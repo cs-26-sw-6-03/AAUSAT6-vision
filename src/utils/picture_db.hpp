@@ -10,7 +10,7 @@ public:
     explicit PictureDB(std::filesystem::path path_to_pictures);
 
     // Returns the raw image for a file relative to the pictures directory.
-    cv::Mat get_raw_frame(std::filesystem::path relative_path);
+    cv::Mat get_raw_frame(std::filesystem::path relative_path) const;
 
     // Scans the pictures directory for files not yet loaded.
     // Computes keypoints and descriptors only for new files using the provided ORB model.

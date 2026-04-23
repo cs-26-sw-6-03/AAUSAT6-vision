@@ -1,0 +1,116 @@
+name: build on x86_84 and arm64 on Ubuntu 22.04
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    name: Build (GCC, x86_64, Ubuntu 22.04)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          TZ: Etc/UTC
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            cmake \
+            pkg-config \
+            libopencv-dev \
+            libyaml-cpp-dev \
+            libunwind-dev \
+            libgstreamer1.0-dev \
+            libgstreamer-plugins-base1.0-dev
+
+      - name: Configure
+        env:
+          CC: gcc
+          CXX: g++
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
+
+      - name: Build
+        run: |
+          cmake --build build --config Release -j
+
+  build_arm64:
+    name: Build (GCC, arm64 via Docker/QEMU)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+        with:
+          image: tonistiigi/binfmt:latest
+          platforms: arm64
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build (arm64 in Docker)
+        run: |
+          docker run --rm --platform linux/arm64 --privileged --security-opt seccomp=unconfined \
+            -v "$PWD:/workspace" -w /workspace \
+            ubuntu:22.04 bash -lc "\
+              export DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC && \
+              apt-get update && \
+              apt-get install -y --no-install-recommends \
+                build-essential \
+                cmake \
+                pkg-config \
+                libopencv-dev \
+                libyaml-cpp-dev \
+                libunwind-dev \
+                libgstreamer1.0-dev \
+                libgstreamer-plugins-base1.0-dev && \
+              cmake -S . -B build-arm64 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF && \
+              cmake --build build-arm64 --config Release -j"
+
+  build_clang:
+    name: Build (Clang, x86_64, Ubuntu 22.04)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          TZ: Etc/UTC
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            clang \
+            cmake \
+            pkg-config \
+            libopencv-dev \
+            libyaml-cpp-dev \
+            libunwind-dev \
+            libgstreamer1.0-dev \
+            libgstreamer-plugins-base1.0-dev
+
+      - name: Configure
+        env:
+          CC: clang
+          CXX: clang++
+        run: |
+          cmake -S . -B build-clang -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
+
+      - name: Build
+        run: |
+          cmake --build build-clang --config Release -j

@@ -55,7 +55,7 @@ bool Router::dispatch(std::shared_ptr<FrameContext> ctx) {
 // Default routing table. Reads RoutingFlags in order of pipeline progression.
 // Stage progression:
 //   capture -> orb -> optical_flow -> ransac -> pose -> output
-std::string Router::default_route(const FrameContext& ctx) const {
+std::string Router::default_route(const FrameContext& ctx) {
     const auto& f = ctx.flags;
 
     if (f.drop_frame)       return "";
