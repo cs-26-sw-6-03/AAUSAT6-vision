@@ -1,20 +1,17 @@
-input:
-    source: "/home/digita/projects/AAUSAT6-C-/jitter30.mp4"
-
 orb:
   n_features: 400
-  detect_every: 300
+  detect_every: 60
 
 optical_flow:
-    win_size: 11
-    pyr_levels: 2
+    win_size: 21
+    pyr_levels: 3
  
 
 stabilizer:
   reproj_threshold: 3.0   # estimateAffinePartial2D RANSAC threshold (pixels)
   smoothing: 0.05          # EMA alpha (lower = smoother, typical: 0.03-0.10)
-  max_iterations: 2000
+  max_iterations: 1000
 
 telemetry:
     enabled: true
-    file: "400-300-11-2-jitter30.json"
+    file: "stab-3-005-1000.jsonl"
