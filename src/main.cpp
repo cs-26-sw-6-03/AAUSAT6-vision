@@ -1,19 +1,19 @@
-#include <iostream>
-#include <csignal>
 #include <atomic>
+#include <csignal>
+#include <iostream>
 
-#include <opencv2/core.hpp>
 #include "pipeline/pipeline.hpp"
 #include "utils/telemetry_logger.hpp"
+#include <opencv2/core.hpp>
 
 // --- Stages ---
 #include "stages/capture_stage.hpp"
-#include "stages/orb_stage.hpp"
 #include "stages/optical_flow_stage.hpp"
+#include "stages/orb_stage.hpp"
+#include "stages/output_stage.hpp"
 #include "stages/pose_stage.hpp"
 #include "stages/stabilizer_stage.hpp"
 #include "stages/warp_apply_stage.hpp"
-#include "stages/output_stage.hpp"
 
 static std::atomic<bool> g_shutdown{false};
 
@@ -21,7 +21,7 @@ static void signal_handler(int) {
     g_shutdown.store(true);
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     if (argc < 2) {
         std::cerr << "Usage: vision <config.yaml> [experiment_overlay.yaml]\n";
         return 1;
@@ -37,13 +37,13 @@ int main(int argc, char* argv[]) {
 
     // --- Telemetry ---
     {
-        bool telemetry_enabled = cfg.get<bool>("telemetry.enabled", false);
-        std::string telemetry_file = cfg.get<std::string>("telemetry.file", "");
+        bool        telemetry_enabled = cfg.get<bool>("telemetry.enabled", false);
+        std::string telemetry_file    = cfg.get<std::string>("telemetry.file", "");
         TelemetryLogger::instance().init(telemetry_enabled, telemetry_file);
     }
 
     // --- Signal handling ---
-    std::signal(SIGINT,  signal_handler);
+    std::signal(SIGINT, signal_handler);
     std::signal(SIGTERM, signal_handler);
 
     // Disable OpenCV's internal thread pools — the pipeline already runs one thread per stage,
@@ -58,13 +58,13 @@ int main(int argc, char* argv[]) {
     auto orb_mode = std::make_shared<std::atomic<bool>>(true);
 
     // Stage order: capture -> orb -> optical_flow -> ransac -> warp_apply -> pose -> output
-    pipeline.add_stage(std::make_shared<CaptureStage>     (pipeline.router(), cfg, 0));
-    pipeline.add_stage(std::make_shared<OrbStage>         (pipeline.router(), cfg, orb_mode, 1));
-    pipeline.add_stage(std::make_shared<OpticalFlowStage> (pipeline.router(), cfg, orb_mode, 2));
+    pipeline.add_stage(std::make_shared<CaptureStage>(pipeline.router(), cfg, 0));
+    pipeline.add_stage(std::make_shared<OrbStage>(pipeline.router(), cfg, orb_mode, 1));
+    pipeline.add_stage(std::make_shared<OpticalFlowStage>(pipeline.router(), cfg, orb_mode, 2));
     pipeline.add_stage(std::make_shared<AffineEstimatorStage>(pipeline.router(), cfg, 3));
-    pipeline.add_stage(std::make_shared<WarpApplyStage>      (pipeline.router(), cfg, 4));
-    pipeline.add_stage(std::make_shared<PoseStage>        (pipeline.router(), cfg, 1));
-    pipeline.add_stage(std::make_shared<OutputStage>         (pipeline.router(), cfg, 1));
+    pipeline.add_stage(std::make_shared<WarpApplyStage>(pipeline.router(), cfg, 4));
+    pipeline.add_stage(std::make_shared<PoseStage>(pipeline.router(), cfg, 1));
+    pipeline.add_stage(std::make_shared<OutputStage>(pipeline.router(), cfg, 1));
 
     pipeline.start();
 

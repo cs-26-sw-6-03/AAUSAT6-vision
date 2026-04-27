@@ -2,8 +2,8 @@
 
 #include "../pipeline/threadedstage.hpp"
 #include "../utils/config.hpp"
-#include <iostream>
 #include <cmath>
+#include <iostream>
 #include <opencv2/calib3d.hpp>
 #include <opencv2/opencv.hpp>
 
@@ -24,24 +24,22 @@
 class AffineEstimatorStage : public ThreadedStage {
   public:
     AffineEstimatorStage(std::shared_ptr<Router> router, const Config &cfg, int cpu_affinity = -1)
-        : ThreadedStage("ransac", std::move(router)
-        , cfg.get<int>("pipeline.queue_size", 32), cpu_affinity)
-        , reproj_threshold_(cfg.get<float>("stabilizer.reproj_threshold", 3.0f))
-        , min_inliers_(cfg.get<int>("stabilizer.min_inliers", 6))
-        , alpha_(cfg.get<double>("stabilizer.smoothing", 0.05))
-        , max_iterations_(cfg.get<int>("stabilizer.max_iterations", 2000))
-        , confidence_(cfg.get<double>("stabilizer.confidence", 0.995))
-        , refine_iterations_(cfg.get<int>("stabilizer.refine_iterations", 10))
-        , deadband_translation_px_(cfg.get<double>("stabilizer.deadband_translation_px", 0.75))
-        , deadband_rotation_deg_(cfg.get<double>("stabilizer.deadband_rotation_deg", 0.15))
-        , deadband_scale_(cfg.get<double>("stabilizer.deadband_scale", 0.002))
-        {}
+        : ThreadedStage("ransac", std::move(router), cfg.get<int>("pipeline.queue_size", 32), cpu_affinity),
+          reproj_threshold_(cfg.get<float>("stabilizer.reproj_threshold", 3.0f)),
+          min_inliers_(cfg.get<int>("stabilizer.min_inliers", 6)),
+          alpha_(cfg.get<double>("stabilizer.smoothing", 0.05)),
+          max_iterations_(cfg.get<int>("stabilizer.max_iterations", 2000)),
+          confidence_(cfg.get<double>("stabilizer.confidence", 0.995)),
+          refine_iterations_(cfg.get<int>("stabilizer.refine_iterations", 10)),
+          deadband_translation_px_(cfg.get<double>("stabilizer.deadband_translation_px", 0.75)),
+          deadband_rotation_deg_(cfg.get<double>("stabilizer.deadband_rotation_deg", 0.15)),
+          deadband_scale_(cfg.get<double>("stabilizer.deadband_scale", 0.002)) {}
 
     void init() override {
-        T_smooth_ = cv::Mat::eye(3, 3, CV_64F);
-        T_prev_ = cv::Mat::eye(3, 3, CV_64F);
+        T_smooth_    = cv::Mat::eye(3, 3, CV_64F);
+        T_prev_      = cv::Mat::eye(3, 3, CV_64F);
         initialized_ = false;
-        frame_idx_ = 0;
+        frame_idx_   = 0;
     }
 
     void process(std::shared_ptr<FrameContext> ctx) override {
@@ -53,8 +51,8 @@ class AffineEstimatorStage : public ThreadedStage {
                                ctx->optical_flow_result->tracking_reseeded);
 
         if (do_reset || !initialized_) {
-            T_smooth_ = cv::Mat::eye(3, 3, CV_64F);
-            T_prev_ = cv::Mat::eye(3, 3, CV_64F);
+            T_smooth_    = cv::Mat::eye(3, 3, CV_64F);
+            T_prev_      = cv::Mat::eye(3, 3, CV_64F);
             initialized_ = true;
             emit_identity(ctx);
             ++frame_idx_;
@@ -87,11 +85,11 @@ class AffineEstimatorStage : public ThreadedStage {
 
         cv::Mat M33 = cv::Mat::eye(3, 3, CV_64F);
         if (!M23.empty()) {
-            const double a = M23.at<double>(0, 0);
-            const double b = M23.at<double>(1, 0);
-            const double tx = M23.at<double>(0, 2);
-            const double ty = M23.at<double>(1, 2);
-            const double scale = std::sqrt(a * a + b * b);
+            const double a       = M23.at<double>(0, 0);
+            const double b       = M23.at<double>(1, 0);
+            const double tx      = M23.at<double>(0, 2);
+            const double ty      = M23.at<double>(1, 2);
+            const double scale   = std::sqrt(a * a + b * b);
             const double rot_deg = std::atan2(b, a) * 180.0 / CV_PI;
 
             const bool is_small_motion =
@@ -128,25 +126,25 @@ class AffineEstimatorStage : public ThreadedStage {
     }
 
   private:
-    float reproj_threshold_ = 3.0f;
-    int min_inliers_ = 6;
-    double alpha_ = 0.05;
-    int max_iterations_;
+    float  reproj_threshold_ = 3.0f;
+    int    min_inliers_      = 6;
+    double alpha_            = 0.05;
+    int    max_iterations_;
     double confidence_;
-    int refine_iterations_;
+    int    refine_iterations_;
     double deadband_translation_px_;
     double deadband_rotation_deg_;
     double deadband_scale_;
 
-    cv::Mat T_smooth_;
-    cv::Mat T_prev_;
-    bool initialized_ = false;
-    std::size_t frame_idx_ = 0;
+    cv::Mat     T_smooth_;
+    cv::Mat     T_prev_;
+    bool        initialized_ = false;
+    std::size_t frame_idx_   = 0;
 
     // Identity path: store identity homography and skip warp_apply entirely
     void emit_identity(std::shared_ptr<FrameContext> &ctx) {
         ctx->ransac_result.emplace();
         ctx->ransac_result->homography = cv::Mat::eye(3, 3, CV_32F);
-        ctx->flags.has_inliers = true; // bypass warp_apply, go straight to pose
+        ctx->flags.has_inliers         = true; // bypass warp_apply, go straight to pose
     }
 };

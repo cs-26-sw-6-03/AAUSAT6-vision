@@ -21,8 +21,7 @@ class WarpApplyStage : public ThreadedStage {
   public:
     WarpApplyStage(std::shared_ptr<Router> router, const Config &cfg,
                    int cpu_affinity = -1)
-        : ThreadedStage("warp_apply", std::move(router)
-        , cfg.get<int>("pipeline.queue_size", 32), cpu_affinity) {
+        : ThreadedStage("warp_apply", std::move(router), cfg.get<int>("pipeline.queue_size", 32), cpu_affinity) {
     }
 
     void init() override {}
@@ -39,7 +38,7 @@ class WarpApplyStage : public ThreadedStage {
             ctx->frame = stabilized;
         }
 
-        ctx->flags.has_warp = false;
+        ctx->flags.has_warp    = false;
         ctx->flags.has_inliers = true; // route to pose
     }
 };
