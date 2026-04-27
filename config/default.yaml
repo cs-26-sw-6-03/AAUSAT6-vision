@@ -4,9 +4,9 @@ pipeline:
     capture: 0
     detector: 1
     tracking: 2
-    ransac: 2
-    estimator: 2
-    warp: 1
+    ransac: 3
+    estimator: 1
+    warp: 3
     pose: 1
     output: 1
 
