@@ -22,7 +22,7 @@
 class CaptureStage : public ThreadedStage {
   public:
     CaptureStage(std::shared_ptr<Router> router, const Config &cfg, int cpu_affinity = -1)
-        : ThreadedStage("capture", std::move(router), 1, cpu_affinity) // queue_size=1, unused by capture
+        : ThreadedStage("capture", std::move(router), 1, cpu_affinity) // queue_size=1, unused by capture as it just get whatever frame is currently being captured
           ,
           source_(cfg.require<std::string>("input.source")),
           loop_(cfg.get<bool>("input.loop", false)) {}
