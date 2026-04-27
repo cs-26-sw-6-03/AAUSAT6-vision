@@ -1,0 +1,14 @@
+orb:
+  n_features: 400
+  detect_every: 60
+
+optical_flow:
+    win_size: 21
+    pyr_levels: 3
+ 
+
+stabilizer:
+  reproj_threshold: 5.0   # estimateAffinePartial2D RANSAC threshold (pixels)
+  smoothing: 0.15          # EMA alpha (lower = smoother, typical: 0.03-0.10)
+  max_iterations: 500
+
