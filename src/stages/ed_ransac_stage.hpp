@@ -1,16 +1,14 @@
 #include "../pipeline/threadedstage.hpp"
 #include "../utils/config.hpp"
-#include <opencv2/opencv.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/calib3d.hpp>
 #include <iostream>
+#include <opencv2/calib3d.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/opencv.hpp>
 
-class EdRansacStage : public ThreadedStage
-{
-public:
+class EdRansacStage : public ThreadedStage {
+  public:
     EdRansacStage(std::shared_ptr<Router> router, const Config &cfg, int cpu_affinity = -1)
-        : ThreadedStage("ransac", std::move(router), cfg.get<int>("pipeline.queue_size", 32), cpu_affinity)
-    {
+        : ThreadedStage("ransac", std::move(router), cfg.get<int>("pipeline.queue_size", 32), cpu_affinity) {
         lowe_ratio           = cfg.get<float>("ransac.lowe_ratio", 0.75f);
         ransac_reproj_thresh = cfg.get<float>("ransac.reprojection_threshold", 3.0);
         ed_threshold         = cfg.get<float>("ransac.ed_threshold", 0.5f);
@@ -20,8 +18,7 @@ public:
         ransac_confidence    = cfg.get<double>("ransac.confidence", 0.995);
     }
 
-    void init() override
-    {
+    void init() override {
         matcher_ = cv::BFMatcher::create(cv::NORM_HAMMING, false);
         trajectory_.clear();
         prev_kps_.clear();
@@ -30,19 +27,17 @@ public:
         initialized_ = false;
     }
 
-    void process(std::shared_ptr<FrameContext> ctx) override
-    {
+    void process(std::shared_ptr<FrameContext> ctx) override {
         std::vector<cv::Point2f> pts_prev, pts_curr;
 
-        if (ctx->orb_result.has_value() && !ctx->orb_result->descriptors.empty())
-        {
-            const auto& curr_kps  = ctx->orb_result->keypoints;
-            const auto& curr_desc = ctx->orb_result->descriptors;
+        if (ctx->orb_result.has_value() && !ctx->orb_result->descriptors.empty()) {
+            const auto &curr_kps  = ctx->orb_result->keypoints;
+            const auto &curr_desc = ctx->orb_result->descriptors;
 
             if (!initialized_ || prev_desc_.empty()) {
                 // First ORB frame: seed buffer, push identity, skip stabilization
                 trajectory_.push_back(cv::Mat::eye(3, 3, CV_64F));
-                prev_kps_    = curr_kps;
+                prev_kps_ = curr_kps;
                 curr_desc.copyTo(prev_desc_);
                 initialized_ = true;
                 ++frame_idx_;
@@ -66,12 +61,13 @@ public:
             // Only use ORB adjacent-frame matching as fallback when LK has no result
             // (e.g. immediately after a tracking loss before LK has caught up).
             bool lk_available = ctx->optical_flow_result.has_value() &&
-                                 !ctx->optical_flow_result->points_prev.empty();
+                                !ctx->optical_flow_result->points_prev.empty();
             if (!lk_available) {
                 std::vector<std::vector<cv::DMatch>> knn_matches;
                 matcher_->knnMatch(prev_desc_, curr_desc, knn_matches, 2);
-                for (const auto& m : knn_matches) {
-                    if (m.size() < 2) continue;
+                for (const auto &m : knn_matches) {
+                    if (m.size() < 2)
+                        continue;
                     if (m[0].distance < lowe_ratio * m[1].distance) {
                         pts_prev.push_back(prev_kps_[m[0].queryIdx].pt);
                         pts_curr.push_back(curr_kps[m[0].trainIdx].pt);
@@ -87,14 +83,12 @@ public:
         // Prefer LK correspondences (single-frame motion, reliable at any speed)
         if (pts_prev.empty() &&
             ctx->optical_flow_result.has_value() &&
-            !ctx->optical_flow_result->points_prev.empty())
-        {
+            !ctx->optical_flow_result->points_prev.empty()) {
             pts_prev = ctx->optical_flow_result->points_prev;
             pts_curr = ctx->optical_flow_result->points_curr;
         }
 
-        if (pts_prev.empty())
-        {
+        if (pts_prev.empty()) {
             ctx->flags.has_inliers = true;
             return;
         }
@@ -142,19 +136,18 @@ public:
 
         ctx->ransac_result.emplace();
         ctx->ransac_result->homography = warp;
-        ctx->flags.has_inliers = true;
+        ctx->flags.has_inliers         = true;
         ++frame_idx_;
     }
 
-private:
-
-    float  lowe_ratio            = 0.75f;
-    double ransac_reproj_thresh  = 3.0;   // pixels
-    float  ed_threshold          = 0.5f;  // pixels
-    int    min_inliers           = 10;
-    int    smooth_radius         = 15;    // trailing frames
-    int    ransac_max_iters      = 2000;
-    double ransac_confidence     = 0.995;
+  private:
+    float  lowe_ratio           = 0.75f;
+    double ransac_reproj_thresh = 3.0;  // pixels
+    float  ed_threshold         = 0.5f; // pixels
+    int    min_inliers          = 10;
+    int    smooth_radius        = 15; // trailing frames
+    int    ransac_max_iters     = 2000;
+    double ransac_confidence    = 0.995;
 
     cv::Ptr<cv::BFMatcher> matcher_;
 
@@ -164,16 +157,16 @@ private:
 
     std::vector<cv::Mat> trajectory_;
 
-    bool initialized_ = false;
-    std::size_t frame_idx_ = 0;
+    bool        initialized_ = false;
+    std::size_t frame_idx_   = 0;
 
     // Pass 1: standard RANSAC homography → initial inlier set
     // Pass 2: project inliers through H, discard any with ED > ed_threshold
     // Final:  least-squares re-estimation on the clean inlier set
-    cv::Mat ed_ransac(const std::vector<cv::Point2f>& pts_prev,
-                      const std::vector<cv::Point2f>& pts_curr) const
-    {
-        if ((int)pts_prev.size() < min_inliers) return {};
+    cv::Mat ed_ransac(const std::vector<cv::Point2f> &pts_prev,
+                      const std::vector<cv::Point2f> &pts_curr) const {
+        if ((int)pts_prev.size() < min_inliers)
+            return {};
 
         // Pass 1: RANSAC
         cv::Mat inlier_mask;
@@ -183,7 +176,8 @@ private:
                                        inlier_mask,
                                        ransac_max_iters,
                                        ransac_confidence);
-        if (H.empty()) return {};
+        if (H.empty())
+            return {};
 
         std::vector<cv::Point2f> inl_prev, inl_curr;
         for (int i = 0; i < (int)pts_prev.size(); ++i) {
@@ -192,7 +186,8 @@ private:
                 inl_curr.push_back(pts_curr[i]);
             }
         }
-        if ((int)inl_prev.size() < min_inliers) return {};
+        if ((int)inl_prev.size() < min_inliers)
+            return {};
 
         // Pass 2: Euclidean distance filter
         std::vector<cv::Point2f> projected;
@@ -207,19 +202,20 @@ private:
                 ed_curr.push_back(inl_curr[i]);
             }
         }
-        if ((int)ed_prev.size() < min_inliers) return {};
+        if ((int)ed_prev.size() < min_inliers)
+            return {};
 
         // Final: least-squares re-estimation on clean set
         return cv::findHomography(ed_prev, ed_curr, 0);
     }
 
     // Causal trailing-window average over all retained trajectory entries
-    cv::Mat smooth_transform() const
-    {
-        if (trajectory_.empty()) return cv::Mat::eye(3, 3, CV_64F);
+    cv::Mat smooth_transform() const {
+        if (trajectory_.empty())
+            return cv::Mat::eye(3, 3, CV_64F);
 
         cv::Mat sum = cv::Mat::zeros(3, 3, CV_64F);
-        for (const auto& T : trajectory_)
+        for (const auto &T : trajectory_)
             sum += T;
 
         return sum / (double)trajectory_.size();

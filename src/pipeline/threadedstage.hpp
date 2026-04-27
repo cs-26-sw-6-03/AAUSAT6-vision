@@ -1,21 +1,21 @@
 #pragma once
 
-/* 
+/*
  * threadedstage.hpp
  *
  * A stage that runs on its own thread. Frames are enqueued in hte input queue by the router.
  * Afterwhich the frames are processed and dispatched back through the router.
  */
 
-#include "stage.hpp"
-#include "router.hpp"
 #include "../utils/threadsafequeue.hpp"
+#include "router.hpp"
+#include "stage.hpp"
 
-#include <thread>
 #include <atomic>
-#include <memory>
 #include <chrono>
+#include <memory>
 #include <pthread.h>
+#include <thread>
 
 // Two modes:
 //   Queue mode (default) — for processing stages.
@@ -29,39 +29,39 @@
 // Lifecycle (both modes):
 //   start() -> [thread runs] -> stop()
 class ThreadedStage : public Stage {
-public:
-    ThreadedStage(std::string name,
+  public:
+    ThreadedStage(std::string             name,
                   std::shared_ptr<Router> router,
-                  size_t queue_size = 32,
-                  int cpu_affinity = -1);
- 
+                  size_t                  queue_size   = 32,
+                  int                     cpu_affinity = -1);
+
     ~ThreadedStage() override;
- 
+
     void start();
     void stop();
- 
-    void enqueue(std::shared_ptr<FrameContext> ctx);
+
+    void                        enqueue(std::shared_ptr<FrameContext> ctx);
     std::shared_ptr<FrameQueue> queue() { return queue_; }
-    std::shared_ptr<Router> router() { return router_; }
-    bool is_running() const { return running_.load(); }
- 
-protected:
+    std::shared_ptr<Router>     router() { return router_; }
+    bool                        is_running() const { return running_.load(); }
+
+  protected:
     // Queue mode: subclasses implement this
     void process(std::shared_ptr<FrameContext> ctx) override {}
- 
+
     // Source mode: override run() entirely to produce frames instead of consuming queue.
     // Call router()->dispatch(ctx) to push frames into the pipeline.
     virtual void run();
- 
+
     // Convenience wrapper used by source stages
     void dispatch(std::shared_ptr<FrameContext> ctx);
- 
-private:
+
+  private:
     std::shared_ptr<Router>     router_;
     std::shared_ptr<FrameQueue> queue_;
     std::thread                 thread_;
     std::atomic<bool>           running_{false};
     int                         cpu_affinity_;
- 
+
     static constexpr std::chrono::milliseconds POP_TIMEOUT{100};
 };
