@@ -62,6 +62,7 @@ class CaptureStage : public ThreadedStage {
                 ctx->frame_id         = frame_id++;
                 ctx->flags.from_input = true;
 
+                // Route the frame into the pipeline
                 router()->dispatch(std::move(ctx));
             }
 
