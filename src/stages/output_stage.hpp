@@ -234,7 +234,12 @@ private:
             p << " ! " << file_muxer_;
             p << " ! filesink location=\"" << file_path_ << "\"";
         } else {
-            p << " ! " << rtp_encoder_ << " bitrate=" << bitrate_ << " tune=zerolatency";
+            // v4l2h264enc doesn't support bitrate property
+            if (rtp_encoder_.find("v4l2") == std::string::npos) {
+                p << " ! " << rtp_encoder_ << " bitrate=" << bitrate_ << " tune=zerolatency";
+            } else {
+                p << " ! " << rtp_encoder_;
+            }
             p << " ! rtph264pay"; // // config-interval=1 pt=96
             p << " ! udpsink host=" << rtp_host_ << " port=" << rtp_port_;
         }
