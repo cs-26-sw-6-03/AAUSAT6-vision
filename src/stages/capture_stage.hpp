@@ -14,20 +14,20 @@
 #include "../pipeline/threadedstage.hpp"
 #include "../utils/config.hpp"
 
+#include <chrono>
 #include <opencv2/videoio.hpp>
 #include <stdexcept>
 #include <string>
-#include <chrono>
 
 class CaptureStage : public ThreadedStage {
-public:
-    CaptureStage(std::shared_ptr<Router> router, const Config& cfg, int cpu_affinity = -1)
-        : ThreadedStage("capture", std::move(router), 1, cpu_affinity)  // queue_size=1, unused by capture
-        , source_(cfg.require<std::string>("input.source"))
-        , loop_(cfg.get<bool>("input.loop", false))
-    {}
+  public:
+    CaptureStage(std::shared_ptr<Router> router, const Config &cfg, int cpu_affinity = -1)
+        : ThreadedStage("capture", std::move(router), 1, cpu_affinity) // queue_size=1, unused by capture as it just get whatever frame is currently being captured
+          ,
+          source_(cfg.require<std::string>("input.source")),
+          loop_(cfg.get<bool>("input.loop", false)) {}
 
-protected:
+  protected:
     // Override init/shutdown for resource management
     void init() override {}
     void shutdown() override {}
@@ -50,26 +50,28 @@ protected:
                 ctx->timestamp = capture_start;
 
                 if (!cap.read(ctx->frame) || ctx->frame.empty()) {
-                    if (loop_) break;   // reopen source
-                    return;             // source exhausted — exit naturally
+                    if (loop_)
+                        break; // reopen source
+                    return;    // source exhausted — exit naturally
                 }
 
-                auto &timing = ctx->telemetry.per_stage["capture"];
+                auto &timing         = ctx->telemetry.per_stage["capture"];
                 timing.process_start = capture_start;
                 timing.process_end   = std::chrono::steady_clock::now();
 
-                ctx->frame_id        = frame_id++;
+                ctx->frame_id         = frame_id++;
                 ctx->flags.from_input = true;
 
                 router()->dispatch(std::move(ctx));
             }
 
-            if (!loop_) break;
+            if (!loop_)
+                break;
         }
     }
 
-private:
-    bool is_gstreamer_pipeline(const std::string& s) const {
+  private:
+    bool is_gstreamer_pipeline(const std::string &s) const {
         return s.find('!') != std::string::npos;
     }
 

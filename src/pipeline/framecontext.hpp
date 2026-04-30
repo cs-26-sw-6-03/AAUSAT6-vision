@@ -1,45 +1,46 @@
 #pragma once
 
-/* 
+/*
  * framecontext.hpp
  *
  * Struct to pass context information between pipeline stages.
  * Carries the frame, results so far, and flags for controlling pipeline flow.
  */
 
-#include <opencv2/core.hpp>
-#include <opencv2/features2d.hpp>
-#include <vector>
-#include <optional>
 #include <chrono>
 #include <cstdint>
+#include <opencv2/core.hpp>
+#include <opencv2/features2d.hpp>
+#include <optional>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 // Routing flags: set by stages to control where the frame goes next.
 // Pipeline order: capture -> orb -> optical_flow -> pose -> ransac -> output
 struct RoutingFlags {
-    bool from_input       = false;    // Fresh from capture              -> route to "orb"
-    bool has_keypoints    = false;    // ORB done (active or passive)    -> route to "optical_flow"
-    bool skip_processing  = false;    // Optical flow done               -> route to "pose"
-    bool has_pose         = false;    // Pose done                       -> route to "ransac"
-    bool has_inliers      = false;    // RANSAC done                     -> route to "output"
-    bool done             = false;    // Frame completed successfully     -> emit telemetry + stop
-    bool drop_frame       = false;    // Frame is unusable / error        -> discard (and emit telemetry)
+    bool from_input      = false; // Fresh from capture              -> route to "orb"
+    bool has_keypoints   = false; // ORB done (active or passive)    -> route to "optical_flow"
+    bool skip_processing = false; // Optical flow done               -> route to "pose"
+    bool has_warp        = false; // Affine estimated                -> route to "warp_apply"
+    bool has_pose        = false; // Pose done                       -> route to "output"
+    bool has_inliers     = false; // Warp applied                    -> route to "pose"
+    bool done            = false; // Frame completed successfully     -> emit telemetry + stop
+    bool drop_frame      = false; // Frame is unusable / error        -> discard (and emit telemetry)
 
     // Informational only (not used for routing)
-    bool needs_redetect      = false;    // Optical flow lost tracking — ORB switched to active    // ORB active mode found DB matches  
+    bool needs_redetect = false; // Optical flow lost tracking — ORB switched to active    // ORB active mode found DB matches
 };
 
 // Optical flow result struct
 struct OpticalFlowResult {
     std::vector<cv::Point2f> points_prev;
     std::vector<cv::Point2f> points_curr;
-    std::vector<uchar>       status;                   // Per-point tracking status
+    std::vector<uchar>       status; // Per-point tracking status
     float                    tracking_score = 0.0f;
-    cv::Point2f              suggested_center;    // Fraction of points tracked
-    bool tracking_just_seeded = false; 
-    bool tracking_reseeded = false;
+    cv::Point2f              suggested_center; // Fraction of points tracked
+    bool                     tracking_just_seeded = false;
+    bool                     tracking_reseeded    = false;
 };
 
 // Oriented 'Features from Accelerated Segment Test (FAST)' and Rotated 'Binary Robust Independent Elementary Features (BRIEF)' (ORB) result
@@ -49,21 +50,21 @@ struct OrbResult {
     cv::Mat                   descriptors; // See docs for cv::Mat descriptor format
     std::vector<cv::KeyPoint> object_keypoints;
     cv::Mat                   object_descriptors;
-    cv::Size                  object_size;  // Reference image dimensions (for projecting center through H)
-    bool has_matches         = false;
+    cv::Size                  object_size; // Reference image dimensions (for projecting center through H)
+    bool                      has_matches = false;
 };
 
 // Matching result struct
 // For marches between two frames, or between frame and map points
 struct MatchingResult {
-    std::vector<cv::DMatch> matches;        // After ratio test
-    //std::vector<cv::DMatch> raw_matches;    // Before ratio test, for inspection
+    std::vector<cv::DMatch> matches; // After ratio test
+    // std::vector<cv::DMatch> raw_matches;    // Before ratio test, for inspection
 };
 
 // RANSAC result stuct
 // For homography estimation between two frames, or between frame and map points
 struct RansacResult {
-    cv::Mat                 homography;    // 3x3, empty if estimation failed
+    cv::Mat                 homography; // 3x3, empty if estimation failed
     std::vector<cv::DMatch> inliers;
     std::vector<cv::DMatch> outliers;
     double                  reprojection_error = 0.0;
@@ -73,11 +74,11 @@ struct RansacResult {
 // Pose result struct
 // for pose estimation between two frames, or between frame and map points
 struct PoseResult {
-    cv::Mat rotation;       // 3x3 rotation matrix
-    cv::Mat translation;    // 3x1 translation vector
-    bool    valid = false;
+    cv::Mat     rotation;    // 3x3 rotation matrix
+    cv::Mat     translation; // 3x1 translation vector
+    bool        valid = false;
     cv::Point2f center;
-    float confidence = 0.f;
+    float       confidence = 0.f;
 };
 
 struct StageTiming {
@@ -89,19 +90,18 @@ struct StageTiming {
 
 struct FrameTelemetry {
     std::unordered_map<std::string, StageTiming> per_stage;
-    bool logged = false;
+    bool                                         logged = false;
 };
 
 struct FrameContext {
     // The frames identity
-    uint64_t frame_id;
-    std::string source_id;                              // Camera / stream identifier
-    std::chrono::steady_clock::time_point timestamp;    // Frame capture time
+    uint64_t                              frame_id;
+    std::string                           source_id; // Camera / stream identifier
+    std::chrono::steady_clock::time_point timestamp; // Frame capture time
 
     // The raw frame data
-    cv::Mat frame;         // Current frame (BGR)
-    //cv::Mat frame_prev;    // Previous frame, if needed by flow
-
+    cv::Mat frame; // Current frame (BGR)
+    // cv::Mat frame_prev;    // Previous frame, if needed by flow
 
     // Stage results
     std::optional<OpticalFlowResult> optical_flow_result;
@@ -110,7 +110,7 @@ struct FrameContext {
     std::optional<RansacResult>      ransac_result;
     std::optional<PoseResult>        pose_result;
 
-    // Routing 
+    // Routing
     RoutingFlags flags; // See above
 
     // Debug / Inspection frame data (annotated frame for visualisation)

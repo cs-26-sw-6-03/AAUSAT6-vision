@@ -1,22 +1,22 @@
 #pragma once
 
-/* 
+/*
  * threadsafequeue.hpp
  *
  * A thread-safe queue implementation using mutexes and condition variables.
- * 
+ *
  * TODO: Needs review
  */
 
-#include <queue>
-#include <mutex>
-#include <condition_variable>
-#include <optional>
 #include <chrono>
+#include <condition_variable>
+#include <mutex>
+#include <optional>
+#include <queue>
 
 template <typename T>
 class ThreadSafeQueue {
-public:
+  public:
     explicit ThreadSafeQueue(size_t max_size = 32)
         : max_size_(max_size) {}
 
@@ -26,7 +26,8 @@ public:
         cv_not_full_.wait(lock, [this] {
             return queue_.size() < max_size_ || stopped_;
         });
-        if (stopped_) return;
+        if (stopped_)
+            return;
         queue_.push(std::move(item));
         cv_not_empty_.notify_one();
     }
@@ -34,7 +35,8 @@ public:
     // Non-blocking push — drops item if full, returns false
     bool try_push(T item) {
         std::unique_lock<std::mutex> lock(mutex_);
-        if (queue_.size() >= max_size_ || stopped_) return false;
+        if (queue_.size() >= max_size_ || stopped_)
+            return false;
         queue_.push(std::move(item));
         cv_not_empty_.notify_one();
         return true;
@@ -46,7 +48,8 @@ public:
         cv_not_empty_.wait(lock, [this] {
             return !queue_.empty() || stopped_;
         });
-        if (queue_.empty()) return std::nullopt;
+        if (queue_.empty())
+            return std::nullopt;
         T item = std::move(queue_.front());
         queue_.pop();
         cv_not_full_.notify_one();
@@ -61,7 +64,8 @@ public:
             })) {
             return std::nullopt;
         }
-        if (queue_.empty()) return std::nullopt;
+        if (queue_.empty())
+            return std::nullopt;
         T item = std::move(queue_.front());
         queue_.pop();
         cv_not_full_.notify_one();
@@ -71,7 +75,8 @@ public:
     // Non-blocking pop
     std::optional<T> try_pop() {
         std::unique_lock<std::mutex> lock(mutex_);
-        if (queue_.empty()) return std::nullopt;
+        if (queue_.empty())
+            return std::nullopt;
         T item = std::move(queue_.front());
         queue_.pop();
         cv_not_full_.notify_one();
@@ -101,7 +106,7 @@ public:
         return stopped_;
     }
 
-private:
+  private:
     std::queue<T>           queue_;
     mutable std::mutex      mutex_;
     std::condition_variable cv_not_empty_;

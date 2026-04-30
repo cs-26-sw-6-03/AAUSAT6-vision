@@ -1,76 +1,96 @@
 pipeline:
   queue_size: 32          # Max frames buffered per stage queue
+  cores:                  # Tie spesific stages to spesific cores
+    capture: 0
+    detector: 1
+    tracking: 2
+    ransac: 3
+    estimator: 1
+    warp: 3
+    pose: 1
+    output: 1
 
 input:
   source: ""              # File path or GStreamer pipeline string (required)
   loop: false             # Reopen source when it ends (useful for file inputs)
 
 pictures:
-  path: "/tmp/vision"    # Directory of reference images, scanned recursively at runtime
-  refresh_interval_s: 5  # How often (seconds) to re-scan for new reference images
+  path: "/tmp/vision"     # Directory of reference images, scanned recursively at runtime
+  refresh_interval_s: 5   # How often (seconds) to re-scan for new reference images in the path directory
 
 optical_flow:
-  win_size: 41
-  pyr_levels: 5
-  max_corners: 200
-  quality_level: 0.01
-  min_distance: 10.0
-  tracking_threshold: 0.75   # Fraction of points that must be tracked
-  redetect_interval: 30      # Force ORB redetect every N frames regardless
+  win_size: 41            # Size of the search window (pixels) used by the Lucas–Kanade tracker for each pyramid level
+  pyr_levels: 5           # Number of pyramid layers used for multi-scale tracking (handles larger motions)
+  min_tracking_pts_: 200  # Minimum number of successfully tracked feature points required before re-detecting features
+  #max_corners: 200
+  #quality_level: 0.01
+  #min_distance: 10.0
+  #tracking_threshold: 0.75   # Fraction of points that must be tracked
 
 orb:
-  n_features: 1000
-  scale_factor: 1.2
-  n_levels: 8
-  edge_threshold: 31
-  patch_size: 31
+  n_features: 1000        # Feature to be detected
   min_matches: 8          # Minimum good matches after ratio test to count as a valid detection
-  detect_every: 60         # Run detection every N frames; skipped frames pass to optical flow for continued tracking
+  detect_every: 60        # Run detection every N frames; skipped frames pass to optical flow for continued tracking
+  #scale_factor: 1.2
+  #n_levels: 8         
+  #edge_threshold: 31
+  #patch_size: 31
 
+#matching:
+#  hamming_ratio_test: 0.75   # Lowe's ratio test threshold
+#  cross_check: false
 
-matching:
-  hamming_ratio_test: 0.75   # Lowe's ratio test threshold
-  cross_check: false
+#Used for multi stage stabilizer
+stabilizer:
+  reproj_threshold: 3.0          # RANSAC reprojection error threshold used during affine transform estimation
+  min_inliers: 6                 # Minimum number of inlier correspondences required to accept the estimated transform
+  smoothing: 0.05                # Exponential moving average factor for motion smoothing (lower = stronger smoothing)
+  max_iterations: 2000           # Maximum number of RANSAC iterations when estimating the affine transform
+  confidence: 0.995              # Desired RANSAC confidence that the estimated transform is correct
+  refine_iterations: 10          # Number of post-RANSAC optimisation iterations to refine the transform
+  deadband_translation_px: 0.75  # Minimum translation required before applying motion compensation
+  deadband_rotation_deg: 0.15    # Minimum rotation required before applying motion compensation
+  deadband_scale: 0.002          # Minimum scale change required before applying motion compensation
 
+#Used for ED Ransac stabilizer
 ransac:
-  method: EG_RANSAC          # RANSAC | EG_RANSAC | USAC_MAGSAC
+  #method: EG_RANSAC          # RANSAC | EG_RANSAC | USAC_MAGSAC
   lowe_ratio: 0.75            # Lowe's ratio test threshold for ORB fallback matching
   reprojection_threshold: 3.0 # RANSAC pass 1 inlier threshold (pixels); higher = faster convergence
   ed_threshold: 0.5           # Pass 2 Euclidean distance filter (pixels)
   min_inlies: 10              # Minimum inliers required at each stage
   smooth_radius: 15           # Trailing frames used for trajectory smoothing
   max_iterations: 2000        # RANSAC max iterations; reduce (e.g. 500) to cut compute time
-  confidence: 0.995
+  confidence: 0.995           # Target probability that the estimated model is correct
 
 pose:
-  enabled: true
+  #enabled: true
   queue_size: 1          # Input queue depth (keep at 1 to avoid stale pose data)
-  MIN_GOOD_MATCHES: 8
-  ALPHA: 0.4
-  lastvalid: false
+  MIN_GOOD_MATCHES: 8    # 
+  ALPHA: 0.4             # EMA smoothing weight
   crop_width: 1920       # Pixels. 0 = disabled. Must be smaller than source width.
   crop_height: 1080      # Pixels. 0 = disabled. Must be smaller than source height.
 
 output:
   #gstreamer_pipeline: "appsrc ! videoconvert ! autovideosink"
-  width: 1920
-  height: 1080
-  fps: 30
+  width: 1920            # Output frame width in pixels, gets set if not proper
+  height: 1080           # Output frame height in pixels, gets set if not proper
+  fps: 30                # Output FPS
   bitrate: 2000          # Encoder bitrate in kbps (applies to x264enc and vpuenc_h264)
-  mode: "file"
+  mode: "file"           # Can be either "file" or "rtp"
   file:
-    path: "output.mp4"
-    encoder: "x264enc"
-    muxer: "mp4mux"
+    path: "output.mp4"   # Path to output file
+    encoder: "x264enc"   # Should be the same as rtp prob
+    muxer: "mp4mux"      # Multiplexer for file
+  rtp:
+    host: "0.0.0.0"      # Target IP
+    port: "8888"         # Target Port
+    encoder: "x264enc"   # Encoding
 
-
-db:
-  path: "data/keypoints.db"
-
-logging:
-  level: info                # debug | info | warn | error
-  file: ""                   # Empty = stdout only
+#logging:
+#  level: info                # debug | info | warn | error
+#  file: ""                   # Empty = stdout only
 
 telemetry:
-  enabled: false
-  file: "/tmp/telemetry.jsonl"
+  enabled: false                # Eenable/disable telemetry data
+  file: "/tmp/telemetry.jsonl"  # Output path for telemetry data

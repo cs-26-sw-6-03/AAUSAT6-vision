@@ -1,6 +1,6 @@
 #pragma once
 
-/* 
+/*
  * stage.hpp
  *
  * Abstract base class for pipeline stages. Each stage is responsible for processing a FrameContext and setting routing flags to indicate where the frame should go next.
@@ -10,10 +10,10 @@
 #include <memory>
 #include <string>
 
-
 class Stage {
-public:
-    explicit Stage(std::string name) : name_(std::move(name)) {}
+  public:
+    explicit Stage(std::string name)
+        : name_(std::move(name)) {}
     virtual ~Stage() = default;
 
     // Process a single frame. Implementations should:
@@ -28,8 +28,8 @@ public:
     // Called once after the pipeline stops. Release resources.
     virtual void shutdown() {}
 
-    const std::string& name() const { return name_; }
+    const std::string &name() const { return name_; }
 
-private:
+  private:
     std::string name_;
 };

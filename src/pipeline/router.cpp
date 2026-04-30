@@ -5,20 +5,21 @@
  */
 
 #include "router.hpp"
-#include <stdexcept>
 #include "../utils/telemetry_logger.hpp"
 #include <chrono>
+#include <stdexcept>
 
-void Router::register_stage(const std::string& name, std::shared_ptr<FrameQueue> queue) {
+void Router::register_stage(const std::string &name, std::shared_ptr<FrameQueue> queue) {
     queues_[name] = std::move(queue);
 }
 
-void Router::set_routing_fn(std::function<std::string(const FrameContext&)> fn) {
+void Router::set_routing_fn(std::function<std::string(const FrameContext &)> fn) {
     routing_fn_ = std::move(fn);
 }
 
 bool Router::dispatch(std::shared_ptr<FrameContext> ctx) {
-    if (!ctx) return false;
+    if (!ctx)
+        return false;
 
     if (ctx->flags.done || ctx->flags.drop_frame) {
         if (!ctx->telemetry.logged) {
@@ -55,15 +56,23 @@ bool Router::dispatch(std::shared_ptr<FrameContext> ctx) {
 // Default routing table. Reads RoutingFlags in order of pipeline progression.
 // Stage progression:
 //   capture -> orb -> optical_flow -> ransac -> pose -> output
-std::string Router::default_route(const FrameContext& ctx) const {
-    const auto& f = ctx.flags;
+std::string Router::default_route(const FrameContext &ctx) {
+    const auto &f = ctx.flags;
 
-    if (f.drop_frame)       return "";
-    if (f.has_pose)         return "output";
-    if (f.has_inliers)      return "pose";
-    if (f.skip_processing)  return "ransac";
-    if (f.has_keypoints)    return "optical_flow";
-    if (f.from_input)       return "orb";
+    if (f.drop_frame)
+        return "";
+    if (f.has_pose)
+        return "output";
+    if (f.has_inliers)
+        return "pose";
+    if (f.has_warp)
+        return "warp_apply";
+    if (f.skip_processing)
+        return "ransac";
+    if (f.has_keypoints)
+        return "optical_flow";
+    if (f.from_input)
+        return "orb";
 
     return "";
 }
