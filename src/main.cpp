@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // --- Config ---
+    //Handle configs and potential overlays
     Config cfg(argv[1]);
     if (argc >= 3) {
         cfg.merge(argv[2]);
@@ -35,29 +35,24 @@ int main(int argc, char *argv[]) {
     std::cout << "aausat6-vision starting\n";
     std::cout << "Config:  " << cfg.path() << "\n";
 
-    // --- Telemetry ---
+    //telemetry
     {
         bool        telemetry_enabled = cfg.get<bool>("telemetry.enabled", false);
         std::string telemetry_file    = cfg.get<std::string>("telemetry.file", "");
         TelemetryLogger::instance().init(telemetry_enabled, telemetry_file);
     }
 
-    // --- Signal handling ---
     std::signal(SIGINT, signal_handler);
     std::signal(SIGTERM, signal_handler);
 
-    // Disable OpenCV's internal thread pools — the pipeline already runs one thread per stage,
-    // so OpenCV workers would only cause over-subscription and cache thrashing.
+    //set openCV threads for core purity
     cv::setNumThreads(1);
 
-    // --- Build pipeline ---
+    //pipeline
     Pipeline pipeline(cfg);
 
-    // Shared flag: OrbStage starts active; OpticalFlowStage flips it to passive
-    // once a valid detection is found, and back to active when tracking is lost.
     auto orb_mode = std::make_shared<std::atomic<bool>>(true);
 
-    // Stage order: capture -> orb -> optical_flow -> ransac -> warp_apply -> pose -> output
     pipeline.add_stage(std::make_shared<CaptureStage>(pipeline.router(), cfg, cfg.get<int>("pipeline.cores.capture", 0)));
     pipeline.add_stage(std::make_shared<OrbStage>(pipeline.router(), cfg, orb_mode, cfg.get<int>("pipeline.cores.detector", 1)));
     pipeline.add_stage(std::make_shared<OpticalFlowStage>(pipeline.router(), cfg, orb_mode, cfg.get<int>("pipeline.cores.tracking", 2)));
@@ -68,7 +63,6 @@ int main(int argc, char *argv[]) {
 
     pipeline.start();
 
-    // --- Run until SIGINT / SIGTERM ---
     std::cout << "Running. Press Ctrl+C to stop.\n";
     while (!g_shutdown.load()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));

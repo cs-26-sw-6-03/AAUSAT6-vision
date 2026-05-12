@@ -7,20 +7,9 @@
 #include <opencv2/calib3d.hpp>
 #include <opencv2/opencv.hpp>
 
-// AffineEstimatorStage — computes the per-frame stabilization warp.
-//
-// Stage 1 of the two-stage stabilizer. Runs on its own thread.
-//
-// Uses cv::estimateAffinePartial2D (4-DOF: tx, ty, rotation, uniform scale)
-// with a single RANSAC call, then applies EMA smoothing to the accumulated
-// trajectory and stores the correction warp in ransac_result->homography.
-// Does NOT touch ctx->frame — that is deferred to WarpApplyStage so that
-// warp estimation and warp application can run in parallel across frames.
-//
-// Routing:
-//   Normal path  → sets has_warp = true  → routed to "warp_apply"
-//   Identity path → sets has_inliers = true → routed directly to "pose"
-//     (identity frames don't need warp application)
+
+// 4-DOF affine stabilization: translation, rotation, uniform scale
+// This only estimates the stabilisation, it does not apply it, thats done later :)
 class AffineEstimatorStage : public ThreadedStage {
   public:
     AffineEstimatorStage(std::shared_ptr<Router> router, const Config &cfg, int cpu_affinity = -1)
@@ -106,7 +95,6 @@ class AffineEstimatorStage : public ThreadedStage {
                       << frame_idx_ << " — using identity\n";
         }
 
-        // Accumulate trajectory: T_curr = M_inter * T_prev
         cv::Mat T_curr = M33 * T_prev_;
 
         // EMA smoothing: T_smooth = alpha*T_curr + (1-alpha)*T_smooth
@@ -119,7 +107,7 @@ class AffineEstimatorStage : public ThreadedStage {
 
         ctx->ransac_result.emplace();
         warp33.convertTo(ctx->ransac_result->homography, CV_32F);
-        ctx->flags.has_warp = true; // routes to WarpApplyStage
+        ctx->flags.has_warp = true;
 
         T_prev_ = T_curr.clone();
         ++frame_idx_;
@@ -145,6 +133,6 @@ class AffineEstimatorStage : public ThreadedStage {
     void emit_identity(std::shared_ptr<FrameContext> &ctx) {
         ctx->ransac_result.emplace();
         ctx->ransac_result->homography = cv::Mat::eye(3, 3, CV_32F);
-        ctx->flags.has_inliers         = true; // bypass warp_apply, go straight to pose
+        ctx->flags.has_inliers         = true;
     }
 };

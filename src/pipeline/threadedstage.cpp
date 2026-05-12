@@ -1,9 +1,3 @@
-/*
- * threadedstage.hpp
- *
- * Implementation of threadsafe stages
- */
-
 #include "threadedstage.hpp"
 #include <chrono>
 #include <iostream>
@@ -54,8 +48,7 @@ void ThreadedStage::dispatch(std::shared_ptr<FrameContext> ctx) {
     router_->dispatch(std::move(ctx));
 }
 
-// Default run loop — pops from queue, calls process(), dispatches result.
-// Source stages (e.g. CaptureStage) override this entirely.
+//default run, gets frame from queue, processes, dispatches
 void ThreadedStage::run() {
     while (running_.load()) {
         auto maybe_ctx = queue_->pop_for(POP_TIMEOUT);

@@ -1,13 +1,5 @@
 #pragma once
 
-/*
- * threadsafequeue.hpp
- *
- * A thread-safe queue implementation using mutexes and condition variables.
- *
- * TODO: Needs review
- */
-
 #include <chrono>
 #include <condition_variable>
 #include <mutex>

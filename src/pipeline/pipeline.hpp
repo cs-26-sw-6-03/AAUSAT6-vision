@@ -1,12 +1,5 @@
 #pragma once
 
-/*
- * pipeline.hpp
- *
- * Defines the Pipeline class. Owns all stages and the router.
- * Responsible for wiring stages to the router, lifecycle management, and injecting the first frame into the pipeline.
- */
-
 #include "../utils/config.hpp"
 #include "router.hpp"
 #include "threadedstage.hpp"
@@ -17,31 +10,16 @@
 #include <unordered_map>
 #include <vector>
 
-// Usage:
-//   Pipeline pipeline(config);
-//   pipeline.add_stage(std::make_shared<CaptureStage>(...));
-//   pipeline.add_stage(std::make_shared<OpticalFlowStage>(...));
-//   ...
-//   pipeline.start();
-//   pipeline.push(ctx);   // Inject frames (or let CaptureStage do it internally)
-//   pipeline.stop();
 class Pipeline {
   public:
     explicit Pipeline(const Config &config);
 
-    // Register a stage. Stages are started in insertion order.
-    // The stage's queue is registered with the Router under stage->name().
     void add_stage(std::shared_ptr<ThreadedStage> stage);
 
-    // Start all stages
     void start();
 
-    // Stop all stages (blocks until all threads have joined)
     void stop();
 
-    // Inject a frame directly — bypasses CaptureStage, useful for testing
-    // or when capture is handled externally.
-    // Routes to the first registered stage by default, or to a named stage.
     void push(std::shared_ptr<FrameContext> ctx,
               const std::string            &target_stage = "");
 

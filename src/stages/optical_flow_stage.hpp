@@ -37,34 +37,28 @@ class OpticalFlowStage : public ThreadedStage {
         bool just_seeded = false;
         if (ctx->orb_result.has_value() && !ctx->orb_result->keypoints.empty()) {
             if (ctx->orb_result->has_matches && ctx->matching_result.has_value()) {
-                // DB match found: seed from all ORB keypoints for stable tracking, switch ORB to passive.
-                // Pose locates the object via matching_result independently — seeding only the
-                // ~12 matched points would immediately fall below min_tracking_pts and reactivate ORB.
+                //match was found, only track matched keypoints, ORB goes to passive
                 prev_pts_.clear();
                 for (const auto &kp : ctx->orb_result->keypoints)
                     prev_pts_.push_back(kp.pt);
                 orb_active_->store(false);
-                just_seeded                                    = true;
+                just_seeded = true;
                 ctx->optical_flow_result->tracking_just_seeded = true;
-                reset_trajectory_next_                         = true;
+                reset_trajectory_next_ = true;
             } else if (prev_pts_.empty()) {
-                // No DB match yet and no active tracking: seed from all detected keypoints
-                // so the stabilizer can run while ORB keeps searching for a reference match
+                // no db match, no tracking, just use all keypoints as seeds and keep ORB active for stabiliser
                 for (const auto &kp : ctx->orb_result->keypoints)
                     prev_pts_.push_back(kp.pt);
-                // Keep ORB active — it must keep searching for a DB match
-                just_seeded                                    = true;
+                just_seeded = true;
                 ctx->optical_flow_result->tracking_just_seeded = true;
-                reset_trajectory_next_                         = true;
+                reset_trajectory_next_ = true;
             }
         }
 
         ctx->flags.has_keypoints   = false;
         ctx->flags.skip_processing = true;
 
-        // On seeding frames, store current gray and skip LK — the seeded positions are
-        // in the current frame so tracking must start from the next frame to be correct.
-        // Also skip if there is no previous frame or no points to track.
+        //Just store gray on first frame to initialize prev_gray_ without doing any tracking
         if (prev_gray_.empty() || prev_pts_.empty() || just_seeded) {
             cv::swap(prev_gray_, gray);
             ++frame_idx_;

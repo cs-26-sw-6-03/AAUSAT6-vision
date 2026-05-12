@@ -14,6 +14,7 @@ cv::Mat PictureDB::get_raw_frame(std::filesystem::path relative_path) const {
     return img;
 }
 
+//Check for and load new images
 void PictureDB::refresh(cv::Ptr<cv::ORB> orb) {
     for (const auto &entry : std::filesystem::recursive_directory_iterator(pictures_path_)) {
         if (!entry.is_regular_file())
