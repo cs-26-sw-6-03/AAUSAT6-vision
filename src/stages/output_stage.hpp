@@ -1,38 +1,5 @@
 #pragma once
 
-/*
- * output_stage.hpp
- *
- * Terminal stage — receives processed frames and pushes them out.
- * Mode is selected via config:
- *
- *   output.mode: file       → GStreamer filesink (e.g. MP4/MKV)
- *   output.mode: rtp        → RTP/UDP stream via GStreamer
- *
- * Config keys:
- *
- *   output.mode             file | rtp | file_vpu | rtp_vpu
- *   output.width            crop/resize target width  (0 = use input dimensions)
- *   output.height           crop/resize target height (0 = use input dimensions)
- *   output.fps              frames per second (default: 30)
- *   output.crop             if true, center-crop instead of resize
- *
- *   # file mode
- *   output.file.path        output file path, e.g. "out/recording.mp4"
- *   output.file.encoder     GStreamer encoder element, e.g. "x264enc"
- *   output.file.muxer       GStreamer muxer element,   e.g. "mp4mux"
- *
- *   # rtp mode
- *   output.rtp.host         destination IP
- *   output.rtp.port         destination UDP port
- *   output.rtp.encoder      GStreamer encoder element, e.g. "x264enc"
- *
- *   # vpu-accelerated modes (for Debix model B)
- *   output.file.encoder     e.g. "vpuenc_h264"
- *   output.file.muxer       e.g. "h264parse"
- *   output.rtp.encoder      e.g. "vpuenc_h264"
- */
-
 #include "../pipeline/threadedstage.hpp"
 #include "../utils/config.hpp"
 
@@ -40,7 +7,7 @@
 #include <gst/gst.h>
 #include <opencv2/imgproc.hpp>
 
-#include <iostream> // For printing to stdout
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -52,12 +19,12 @@ class OutputStage : public ThreadedStage {
           mode_(cfg.require<std::string>("output.mode")),
           fps_(cfg.get<int>("output.fps", 30)),
           bitrate_(cfg.get<int>("output.bitrate", 2000)),
-          width_(cfg.get<int>("output.width", 0)) // default: use input
+          width_(cfg.get<int>("output.width", 0)) // default = input
           ,
-          height_(cfg.get<int>("output.height", 0)) // default: use input
+          height_(cfg.get<int>("output.height", 0)) // default = input
           ,
           crop_(cfg.get<bool>("output.crop", false)) {
-        // std::string mode = cfg.require<std::string>("output.mode");
+
 
         // set up mode-specific configs
         if (mode_ == "file") {
@@ -74,8 +41,8 @@ class OutputStage : public ThreadedStage {
     }
 
     void init() override {
-        gst_init(nullptr, nullptr);                                              // initialize GStreamer liib
-        pipeline_ = build_pipeline();                                            // build pipeline from config
+        gst_init(nullptr, nullptr); // initialize GStreamer liib
+        pipeline_ = build_pipeline(); // build pipeline from config - GSTREAMER PIPELINE; NOT VISION
         appsrc_   = GST_APP_SRC(gst_bin_get_by_name(GST_BIN(pipeline_), "src")); // get appsrc element for pushing frames
         if (!appsrc_) {
             throw std::runtime_error("OutputStage: could not find appsrc element 'src'");
@@ -95,7 +62,6 @@ class OutputStage : public ThreadedStage {
     }
 
     void shutdown() override {
-        // Shutdown resource managment
         if (pipeline_) {
             gst_element_send_event(pipeline_, gst_event_new_eos());
             // Wait for EOS to propagate
@@ -113,7 +79,7 @@ class OutputStage : public ThreadedStage {
         if (!ctx || ctx->frame.empty())
             return; // if frame is empty, skip processing
 
-        cv::Mat frame = ctx->frame; // make alias for frame in context (we do not like hte -> syntax)
+        cv::Mat frame = ctx->frame; // make alias for frame in context (we do not like the -> syntax)
 
         // IMPORTANT
         // latch the width and height on the actual frame and configure teh appsrc and caps + start the pipeline from the first frame
@@ -151,13 +117,6 @@ class OutputStage : public ThreadedStage {
             return;
         }
 
-        /* if (frame.data.cols != width_ || frame.data.rows != height_) {
-            std::cerr << "[GstreamerFileOutput] Frame size mismatch. Expected "
-                    << width_ << "x" << height_ << ", got "
-                    << frame.data.cols << "x" << frame.data.rows << "\n";
-        } */
-
-        // GStreamer expects BGR, which is OpenCV's default — no conversion needed
         gsize      size = static_cast<gsize>(frame.total() * frame.elemSize()); // calc frame size in bytes
         GstBuffer *buf  = gst_buffer_new_allocate(nullptr, size, nullptr);      // alloc gst buffer for frame data
 

@@ -1,15 +1,4 @@
 #pragma once
-/*
- * capture_stage.cpp
- *
- * Produces frames from a source and dispatches them into the pipeline via the Router.
- * Inherits ThreadedStage for consistent lifecycle management, but overrides run()
- * since capture produces frames rather than consuming them from a queue.
- *
- * input.source can be:
- *   - A file path           e.g. "data/test.mp4"
- *   - A GStreamer pipeline  e.g. "v4l2src ! videoconvert ! appsink"  (detected by '!')
- */
 
 #include "../pipeline/threadedstage.hpp"
 #include "../utils/config.hpp"
@@ -28,14 +17,12 @@ class CaptureStage : public ThreadedStage {
           loop_(cfg.get<bool>("input.loop", false)) {}
 
   protected:
-    // Override init/shutdown for resource management
     void init() override {}
     void shutdown() override {}
 
-    // process() is never called on CaptureStage — run() is overridden directly
+    //source mode, overrides run
     void process(std::shared_ptr<FrameContext>) override {}
 
-    // Override the worker loop entirely: produce frames instead of consuming queue
     void run() override {
         uint64_t frame_id = 0;
 

@@ -1,9 +1,3 @@
-/*
- * pipeline.cpp
- *
- * Implementation of pipeline class.
- */
-
 #include "pipeline.hpp"
 #include <iostream>
 #include <stdexcept>

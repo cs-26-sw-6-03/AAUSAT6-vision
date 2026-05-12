@@ -1,23 +1,14 @@
 #pragma once
 
-/*
- * config.hpp
- *
- * Load the config form a YAML file
- * TODO: Needs review
- */
-
 #include <filesystem>
 #include <stdexcept>
 #include <string>
 #include <yaml-cpp/yaml.h>
 
-// Wraps a YAML::Node and provides typed accessors with defaults.
-// Loaded once at startup and passed as const ref or shared_ptr to stages.
-//
-// Usage:
+// Parses YAML and lets us use values
 //   Config cfg("config/default.yaml");
-//   int n = cfg.get<int>("orb.n_features", 1000);
+//    int n = cfg.get<int>("orb.n_features", 1000);
+
 class Config {
   public:
     Config() = default;
@@ -34,8 +25,7 @@ class Config {
         path_ = path;
     }
 
-    // Merge another config on top — values in overlay take precedence.
-    // Useful for experiment configs that only override specific keys.
+    //merge to use overlays
     void merge(const std::filesystem::path &overlay_path) {
         if (!std::filesystem::exists(overlay_path)) {
             throw std::runtime_error("Overlay config not found: " + overlay_path.string());
@@ -44,8 +34,7 @@ class Config {
         merge_nodes(root_, overlay);
     }
 
-    // Get a value by dot-separated key path, e.g. "orb.n_features"
-    // Returns default_val if the key does not exist.
+    //Get value via dots
     template <typename T>
     T get(const std::string &key_path, const T &default_val) const {
         YAML::Node node = resolve(key_path);
@@ -58,7 +47,7 @@ class Config {
         }
     }
 
-    // Get a required value — throws if missing
+    // required values
     template <typename T>
     T require(const std::string &key_path) const {
         YAML::Node node = resolve(key_path);

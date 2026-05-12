@@ -1,9 +1,3 @@
-/*
- * router.cpp
- *
- * Implementation of the Router class.
- */
-
 #include "router.hpp"
 #include "../utils/telemetry_logger.hpp"
 #include <chrono>
@@ -53,9 +47,6 @@ bool Router::dispatch(std::shared_ptr<FrameContext> ctx) {
     return true;
 }
 
-// Default routing table. Reads RoutingFlags in order of pipeline progression.
-// Stage progression:
-//   capture -> orb -> optical_flow -> ransac -> pose -> output
 std::string Router::default_route(const FrameContext &ctx) {
     const auto &f = ctx.flags;
 

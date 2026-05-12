@@ -86,10 +86,7 @@ class PoseStage : public ThreadedStage {
             return;
         }
 
-        // Compute detected center as centroid of INLIER frame keypoints.
-        // This is always within the frame bounds and avoids projecting the
-        // reference-image center through a potentially noisy homography
-        // (which can land outside the frame if the reference image is large).
+        //Find centroid of inliers as detected center in stabilized frame coordinates
         Point2f detectedCenter(0, 0);
         for (int i = 0; i < (int)ptsFrame.size(); ++i)
             if (inlierMask.at<uchar>(i))

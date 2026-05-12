@@ -58,15 +58,13 @@ class OrbStage : public ThreadedStage {
     void process(std::shared_ptr<FrameContext> ctx) override {
         ctx->flags.from_input = false;
 
-        // Passive mode: pass frame through without detection
+        // passive mode
         if (!active_->load()) {
             ctx->flags.has_keypoints = true;
             return;
         }
 
-        // Active mode: detect keypoints and match against reference DB
-        // Skip frames to reduce CPU load — only detect every N frames.
-        // has_keypoints = true routes the frame to optical_flow for continued tracking.
+        // active mode
         if (++frame_count_ % detect_every_ != 0) {
             ctx->flags.has_keypoints     = true;
             ctx->orb_result->has_matches = false;
@@ -84,7 +82,7 @@ class OrbStage : public ThreadedStage {
         const auto                 &descriptorslist = picture_db_->descriptors();
 
         if (descriptorslist.empty() || ctx->orb_result->descriptors.empty()) {
-            // No DB or no descriptors — proceed without matches
+            // No DB or no descriptors
             ctx->orb_result->has_matches = false;
             return;
         }
@@ -99,9 +97,7 @@ class OrbStage : public ThreadedStage {
 
             // Lowe's ratio test
             std::vector<cv::DMatch> good_matches;
-            // std::vector<cv::DMatch> raw_matches;
             for (auto &m : knn_matches) {
-                // if (!m.empty()) raw_matches.push_back(m[0]);
                 if (m.size() == 2 && m[0].distance < 0.75f * m[1].distance)
                     good_matches.push_back(m[0]);
             }
@@ -109,7 +105,6 @@ class OrbStage : public ThreadedStage {
             if (static_cast<int>(good_matches.size()) >= min_matches_) {
                 ctx->matching_result.emplace();
                 ctx->matching_result->matches = std::move(good_matches);
-                // ctx->matching_result->raw_matches = std::move(raw_matches);
                 ctx->orb_result->object_keypoints = picture_db_->keypoints()[i];
                 ctx->orb_result->object_size      = picture_db_->sizes()[i];
                 ctx->orb_result->has_matches      = true;
@@ -118,7 +113,7 @@ class OrbStage : public ThreadedStage {
             }
         }
 
-        // No reference picture matched well enough
+        // no matches
         ctx->orb_result->has_matches = false;
     }
 

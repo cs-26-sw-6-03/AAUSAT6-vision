@@ -9,16 +9,10 @@ class PictureDB {
   public:
     explicit PictureDB(std::filesystem::path path_to_pictures);
 
-    // Returns the raw image for a file relative to the pictures directory.
     cv::Mat get_raw_frame(std::filesystem::path relative_path) const;
 
-    // Scans the pictures directory for files not yet loaded.
-    // Computes keypoints and descriptors only for new files using the provided ORB model.
-    // Already-loaded files are left untouched.
     void refresh(cv::Ptr<cv::ORB> orb);
 
-    // Returns the index of a loaded file in the keypoints/descriptors vectors.
-    // Returns -1 if the file has not been loaded.
     int index_of(const std::filesystem::path &relative_path) const;
 
     const std::vector<std::vector<cv::KeyPoint>> &keypoints() const { return keypoints_; }
@@ -28,8 +22,6 @@ class PictureDB {
   private:
     std::filesystem::path pictures_path_;
 
-    // Maps each loaded file's path (relative to pictures_path_) to its index
-    // in the keypoints_ and descriptors_ vectors.
     std::map<std::filesystem::path, size_t> file_index_map_;
 
     std::vector<std::vector<cv::KeyPoint>> keypoints_;

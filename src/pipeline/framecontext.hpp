@@ -1,12 +1,5 @@
 #pragma once
 
-/*
- * framecontext.hpp
- *
- * Struct to pass context information between pipeline stages.
- * Carries the frame, results so far, and flags for controlling pipeline flow.
- */
-
 #include <chrono>
 #include <cstdint>
 #include <opencv2/core.hpp>
@@ -16,23 +9,18 @@
 #include <unordered_map>
 #include <vector>
 
-// Routing flags: set by stages to control where the frame goes next.
-// Pipeline order: capture -> orb -> optical_flow -> pose -> ransac -> output
 struct RoutingFlags {
-    bool from_input      = false; // Fresh from capture              -> route to "orb"
-    bool has_keypoints   = false; // ORB done (active or passive)    -> route to "optical_flow"
-    bool skip_processing = false; // Optical flow done               -> route to "pose"
-    bool has_warp        = false; // Affine estimated                -> route to "warp_apply"
-    bool has_pose        = false; // Pose done                       -> route to "output"
-    bool has_inliers     = false; // Warp applied                    -> route to "pose"
-    bool done            = false; // Frame completed successfully     -> emit telemetry + stop
-    bool drop_frame      = false; // Frame is unusable / error        -> discard (and emit telemetry)
+    bool from_input      = false;
+    bool has_keypoints   = false; 
+    bool skip_processing = false;
+    bool has_warp        = false; 
+    bool has_pose        = false; 
+    bool has_inliers     = false; 
+    bool done            = false; 
+    bool drop_frame      = false;
+    bool needs_redetect = false;
 
-    // Informational only (not used for routing)
-    bool needs_redetect = false; // Optical flow lost tracking — ORB switched to active    // ORB active mode found DB matches
 };
-
-// Optical flow result struct
 struct OpticalFlowResult {
     std::vector<cv::Point2f> points_prev;
     std::vector<cv::Point2f> points_curr;
@@ -43,8 +31,6 @@ struct OpticalFlowResult {
     bool                     tracking_reseeded    = false;
 };
 
-// Oriented 'Features from Accelerated Segment Test (FAST)' and Rotated 'Binary Robust Independent Elementary Features (BRIEF)' (ORB) result
-// ORB result struct
 struct OrbResult {
     std::vector<cv::KeyPoint> keypoints;
     cv::Mat                   descriptors; // See docs for cv::Mat descriptor format
@@ -54,15 +40,10 @@ struct OrbResult {
     bool                      has_matches = false;
 };
 
-// Matching result struct
-// For marches between two frames, or between frame and map points
 struct MatchingResult {
-    std::vector<cv::DMatch> matches; // After ratio test
-    // std::vector<cv::DMatch> raw_matches;    // Before ratio test, for inspection
+    std::vector<cv::DMatch> matches; 
 };
 
-// RANSAC result stuct
-// For homography estimation between two frames, or between frame and map points
 struct RansacResult {
     cv::Mat                 homography; // 3x3, empty if estimation failed
     std::vector<cv::DMatch> inliers;
@@ -71,8 +52,6 @@ struct RansacResult {
     int                     iterations_used    = 0;
 };
 
-// Pose result struct
-// for pose estimation between two frames, or between frame and map points
 struct PoseResult {
     cv::Mat     rotation;    // 3x3 rotation matrix
     cv::Mat     translation; // 3x1 translation vector
@@ -94,28 +73,21 @@ struct FrameTelemetry {
 };
 
 struct FrameContext {
-    // The frames identity
     uint64_t                              frame_id;
     std::string                           source_id; // Camera / stream identifier
     std::chrono::steady_clock::time_point timestamp; // Frame capture time
 
-    // The raw frame data
     cv::Mat frame; // Current frame (BGR)
-    // cv::Mat frame_prev;    // Previous frame, if needed by flow
 
-    // Stage results
     std::optional<OpticalFlowResult> optical_flow_result;
     std::optional<OrbResult>         orb_result;
     std::optional<MatchingResult>    matching_result;
     std::optional<RansacResult>      ransac_result;
     std::optional<PoseResult>        pose_result;
 
-    // Routing
-    RoutingFlags flags; // See above
+    RoutingFlags flags;
 
-    // Debug / Inspection frame data (annotated frame for visualisation)
     std::optional<cv::Mat> debug_frame;
 
-    // Telemetry attached to this frame for the entire pipeline traversal.
     FrameTelemetry telemetry;
 };
