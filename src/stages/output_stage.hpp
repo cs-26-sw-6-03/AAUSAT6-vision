@@ -113,7 +113,7 @@ class OutputStage : public ThreadedStage {
             std::cerr << "[OutputStage] frame size mismatch: got "
                       << frame.cols << "x" << frame.rows
                       << ", expected " << actual_width_ << "x" << actual_height_
-                      << " — dropping\n";
+                      << " - dropping\n";
             return;
         }
 
@@ -163,7 +163,7 @@ class OutputStage : public ThreadedStage {
     }
 
     std::string build_pipeline_string() const {
-        // Caps for the appsrc — raw BGR frames from OpenCV
+        // Caps for the appsrc - raw BGR frames from OpenCV
         // std::string caps =
         //    "video/x-raw,format=BGR"
         //    ",width=" + std::to_string(width_ > 0 ? width_ : 1920) + // default to 1080p if not specified

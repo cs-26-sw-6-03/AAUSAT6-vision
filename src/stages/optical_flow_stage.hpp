@@ -91,7 +91,7 @@ class OpticalFlowStage : public ThreadedStage {
                                                   : static_cast<float>(currFiltered.size()) / static_cast<float>(prev_pts_.size());
 
         if (static_cast<int>(currFiltered.size()) < min_tracking_pts_) {
-            // Tracking lost — signal ORB to reactivate, clear points
+            // Tracking lost - signal ORB to reactivate, clear points
             orb_active_->store(true);
             prev_pts_.clear();
         } else {

@@ -42,7 +42,7 @@ class OrbStage : public ThreadedStage {
                 auto staging = std::make_shared<PictureDB>(picture_db_path_);
                 staging->refresh(orb_);
 
-                // Swap in under lock — frame processing only holds this lock briefly
+                // Swap in under lock - frame processing only holds this lock briefly
                 std::lock_guard<std::mutex> lock(db_mutex_);
                 picture_db_ = std::move(staging);
             }

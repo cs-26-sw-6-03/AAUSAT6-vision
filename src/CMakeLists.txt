@@ -6,7 +6,7 @@ add_library(vision_lib STATIC
     pipeline/threadedstage.cpp
     pipeline/pipeline.cpp
 
-    # Stages — add files here as you implement them
+    # Stages - add files here as you implement them
     # stages/OpticalFlowStage.cpp
     # stages/orb_stage.cpp
     # stages/MatchingStage.cpp

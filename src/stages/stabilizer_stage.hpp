@@ -60,7 +60,7 @@ class AffineEstimatorStage : public ThreadedStage {
         if ((int)pts_prev.size() < min_inliers_) {
             std::cerr << "[AffineEstimatorStage] too few LK points ("
                       << pts_prev.size() << ") at frame " << frame_idx_
-                      << " — using identity\n";
+                      << " - using identity\n";
             emit_identity(ctx);
             ++frame_idx_;
             return;
@@ -92,7 +92,7 @@ class AffineEstimatorStage : public ThreadedStage {
             }
         } else {
             std::cerr << "[AffineEstimatorStage] estimation failed at frame "
-                      << frame_idx_ << " — using identity\n";
+                      << frame_idx_ << " - using identity\n";
         }
 
         cv::Mat T_curr = M33 * T_prev_;
@@ -101,7 +101,7 @@ class AffineEstimatorStage : public ThreadedStage {
         T_smooth_ = alpha_ * T_curr + (1.0 - alpha_) * T_smooth_;
 
         // Correction warp: bring raw frame onto the smoothed trajectory
-        // Stored as CV_32F — warpAffine works in float natively, avoids
+        // Stored as CV_32F - warpAffine works in float natively, avoids
         // per-frame conversion
         cv::Mat warp33 = T_smooth_ * T_curr.inv();
 

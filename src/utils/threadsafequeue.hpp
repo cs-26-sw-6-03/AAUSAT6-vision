@@ -24,7 +24,7 @@ class ThreadSafeQueue {
         cv_not_empty_.notify_one();
     }
 
-    // Non-blocking push — drops item if full, returns false
+    // Non-blocking push - drops item if full, returns false
     bool try_push(T item) {
         std::unique_lock<std::mutex> lock(mutex_);
         if (queue_.size() >= max_size_ || stopped_)
@@ -48,7 +48,7 @@ class ThreadSafeQueue {
         return item;
     }
 
-    // Block with timeout — returns nullopt if timed out
+    // Block with timeout - returns nullopt if timed out
     std::optional<T> pop_for(std::chrono::milliseconds timeout) {
         std::unique_lock<std::mutex> lock(mutex_);
         if (!cv_not_empty_.wait_for(lock, timeout, [this] {

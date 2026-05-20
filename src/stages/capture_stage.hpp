@@ -39,7 +39,7 @@ class CaptureStage : public ThreadedStage {
                 if (!cap.read(ctx->frame) || ctx->frame.empty()) {
                     if (loop_)
                         break; // reopen source
-                    return;    // source exhausted — exit naturally
+                    return;    // source exhausted - exit naturally
                 }
 
                 auto &timing         = ctx->telemetry.per_stage["capture"];

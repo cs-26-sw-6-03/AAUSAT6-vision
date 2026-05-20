@@ -28,7 +28,7 @@ void TelemetryLogger::init(bool enabled, const std::string &path) {
 
     out_.open(path, std::ios::out | std::ios::trunc);
     if (!out_) {
-        std::cerr << "[TelemetryLogger] Failed to open telemetry file '" << path << "' — disabling telemetry" << std::endl;
+        std::cerr << "[TelemetryLogger] Failed to open telemetry file '" << path << "' - disabling telemetry" << std::endl;
         return;
     }
 

@@ -80,7 +80,7 @@ class PoseStage : public ThreadedStage {
 
         int inlierCount = countNonZero(inlierMask);
         if (inlierCount < 4) {
-            std::cerr << "[PoseStage] too few inliers (" << inlierCount << ") — using last known center\n";
+            std::cerr << "[PoseStage] too few inliers (" << inlierCount << ") - using last known center\n";
             crop(ctx, smoothed_initialized_ ? stabilizedCenter(ctx)
                                             : Point2f(ctx->frame.cols / 2.f, ctx->frame.rows / 2.f));
             return;

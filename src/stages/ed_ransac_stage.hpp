@@ -57,7 +57,7 @@ class EdRansacStage : public ThreadedStage {
                 return;
             }
 
-            // LK is preferred when available — it spans exactly one frame.
+            // LK is preferred when available - it spans exactly one frame.
             // Only use ORB adjacent-frame matching as fallback when LK has no result
             // (e.g. immediately after a tracking loss before LK has caught up).
             bool lk_available = ctx->optical_flow_result.has_value() &&
@@ -101,12 +101,12 @@ class EdRansacStage : public ThreadedStage {
                 H_inter = H;
             } else {
                 std::cerr << "[EdRansacStage] ED-RANSAC failed at frame "
-                          << frame_idx_ << " — using identity.\n";
+                          << frame_idx_ << " - using identity.\n";
             }
         } else {
             std::cerr << "[EdRansacStage] Too few matches ("
                       << pts_prev.size() << ") at frame "
-                      << frame_idx_ << " — using identity.\n";
+                      << frame_idx_ << " - using identity.\n";
         }
 
         if (ctx->optical_flow_result->tracking_reseeded) {

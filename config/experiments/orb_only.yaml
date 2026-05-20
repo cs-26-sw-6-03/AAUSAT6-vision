@@ -1,5 +1,5 @@
 # Experiment: force ORB redetect every frame, disable optical flow tracking.
-# Merge on top of default.yaml — only overrides what's listed here.
+# Merge on top of default.yaml - only overrides what's listed here.
 
 optical_flow:
   tracking_threshold: 1.1    # Impossible to satisfy -> always redetect
