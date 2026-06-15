@@ -8,12 +8,10 @@
 
 // --- Stages ---
 #include "stages/capture_stage.hpp"
-#include "stages/optical_flow_stage.hpp"
+#include "stages/optical_flow_propagator_stage.hpp"
 #include "stages/orb_stage.hpp"
 #include "stages/output_stage.hpp"
 #include "stages/pose_stage.hpp"
-#include "stages/stabilizer_stage.hpp"
-#include "stages/warp_apply_stage.hpp"
 
 static std::atomic<bool> g_shutdown{false};
 
@@ -55,9 +53,7 @@ int main(int argc, char *argv[]) {
 
     pipeline.add_stage(std::make_shared<CaptureStage>(pipeline.router(), cfg, cfg.get<int>("pipeline.cores.capture", 0)));
     pipeline.add_stage(std::make_shared<OrbStage>(pipeline.router(), cfg, orb_mode, cfg.get<int>("pipeline.cores.detector", 1)));
-    pipeline.add_stage(std::make_shared<OpticalFlowStage>(pipeline.router(), cfg, orb_mode, cfg.get<int>("pipeline.cores.tracking", 2)));
-    pipeline.add_stage(std::make_shared<AffineEstimatorStage>(pipeline.router(), cfg, cfg.get<int>("pipeline.cores.estimator", 3)));
-    pipeline.add_stage(std::make_shared<WarpApplyStage>(pipeline.router(), cfg, cfg.get<int>("pipeline.cores.warp", 4)));
+    pipeline.add_stage(std::make_shared<OpticalFlowPropagatorStage>(pipeline.router(), cfg, orb_mode, cfg.get<int>("pipeline.cores.tracking", 2)));
     pipeline.add_stage(std::make_shared<PoseStage>(pipeline.router(), cfg, cfg.get<int>("pipeline.cores.pose", 1)));
     pipeline.add_stage(std::make_shared<OutputStage>(pipeline.router(), cfg, cfg.get<int>("pipeline.cores.output", 1)));
 

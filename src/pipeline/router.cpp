@@ -56,12 +56,8 @@ std::string Router::default_route(const FrameContext &ctx) {
         return "output";
     if (f.has_inliers)
         return "pose";
-    if (f.has_warp)
-        return "warp_apply";
-    if (f.skip_processing)
-        return "ransac";
     if (f.has_keypoints)
-        return "optical_flow";
+        return "optical_flow_propagator";
     if (f.from_input)
         return "orb";
 
