@@ -20,9 +20,9 @@ pictures:
 
 optical_flow_propagator:
   window_frames: 4       # Frames to accumulate LK results before switching to average propagation
-  win_size: 41            # LK search window size (pixels) per pyramid level
-  pyr_levels: 5           # Number of LK pyramid layers for multi-scale tracking
-  min_tracking_pts: 20    # Minimum tracked/visible points before re-triggering ORB
+  win_size: 11            # LK search window size (pixels) per pyramid level
+  pyr_levels: 2           # Number of LK pyramid layers for multi-scale tracking
+  min_tracking_pts: 1     # Minimum tracked/visible points before re-triggering ORB
   max_propagation_frames: 300  # Fallback: re-trigger ORB after this many propagation frames regardless
 
 orb:
