@@ -9,9 +9,12 @@
 class OpticalFlowStage : public ThreadedStage {
   public:
     OpticalFlowStage(std::shared_ptr<Router> router, const Config &cfg,
-                     std::shared_ptr<std::atomic<bool>> orb_active, int cpu_affinity = -1)
+                     std::shared_ptr<std::atomic<bool>> orb_active,
+                     std::shared_ptr<std::atomic<bool>> needs_reseed,
+                     int cpu_affinity = -1)
         : ThreadedStage("optical_flow", std::move(router), cfg.get<int>("pipeline.queue_size", 32), cpu_affinity),
           orb_active_(std::move(orb_active)),
+          needs_reseed_(std::move(needs_reseed)),
           min_tracking_pts_(cfg.get<int>("optical_flow.min_tracking_pts", 200)),
           win_size_(cfg.get<int>("optical_flow.win_size", 21)),
           pyr_levels_(cfg.get<int>("optical_flow.pyr_levels", 3)) {
@@ -91,8 +94,9 @@ class OpticalFlowStage : public ThreadedStage {
                                                   : static_cast<float>(currFiltered.size()) / static_cast<float>(prev_pts_.size());
 
         if (static_cast<int>(currFiltered.size()) < min_tracking_pts_) {
-            // Tracking lost — signal ORB to reactivate, clear points
+            // Tracking lost — signal ORB to reactivate and detect immediately
             orb_active_->store(true);
+            needs_reseed_->store(true);
             prev_pts_.clear();
         } else {
             // Update tracked points for next frame
@@ -112,6 +116,7 @@ class OpticalFlowStage : public ThreadedStage {
 
   private:
     std::shared_ptr<std::atomic<bool>> orb_active_;
+    std::shared_ptr<std::atomic<bool>> needs_reseed_;
 
     cv::Mat                  prev_gray_;
     std::vector<cv::Point2f> prev_pts_;

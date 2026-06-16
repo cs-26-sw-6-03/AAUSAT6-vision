@@ -15,14 +15,17 @@
 class OrbStage : public ThreadedStage {
   public:
     OrbStage(std::shared_ptr<Router> router, const Config &cfg,
-             std::shared_ptr<std::atomic<bool>> active_mode, int cpu_affinity = -1)
+             std::shared_ptr<std::atomic<bool>> active_mode,
+             std::shared_ptr<std::atomic<bool>> needs_reseed,
+             int cpu_affinity = -1)
         : ThreadedStage("orb", std::move(router), cfg.get<int>("pipeline.queue_size", 32), cpu_affinity),
           n_features_(cfg.get<int>("orb.n_features", 1000)),
           min_matches_(cfg.get<int>("orb.min_matches", 10)),
           detect_every_(cfg.get<int>("orb.detect_every", 1)),
           picture_db_path_(std::filesystem::path(cfg.get<std::string>("pictures.path", "/tmp/vision"))),
           refresh_interval_(std::chrono::seconds(cfg.get<int>("pictures.refresh_interval_s", 5))),
-          active_(std::move(active_mode)) {}
+          active_(std::move(active_mode)),
+          needs_reseed_(std::move(needs_reseed)) {}
 
     void init() override {
         orb_        = cv::ORB::create(n_features_);
@@ -57,6 +60,9 @@ class OrbStage : public ThreadedStage {
 
     void process(std::shared_ptr<FrameContext> ctx) override {
         ctx->flags.from_input = false;
+
+        if (needs_reseed_->exchange(false))
+            frame_count_ = detect_every_ - 1;
 
         // passive mode
         if (!active_->load()) {
@@ -128,6 +134,7 @@ class OrbStage : public ThreadedStage {
     std::filesystem::path              picture_db_path_;
     std::chrono::seconds               refresh_interval_;
     std::shared_ptr<std::atomic<bool>> active_;
+    std::shared_ptr<std::atomic<bool>> needs_reseed_;
 
     std::mutex        db_mutex_;
     std::thread       refresh_thread_;
