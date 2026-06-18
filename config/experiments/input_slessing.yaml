@@ -1,5 +1,5 @@
 input:
-    source: "/home/digita/projects/AAUSAT6-C-/jitter30.mp4"
+    source: "/home/digita/projects/vision-benching/datasets/dataset_1/video.mp4"
 
 orb:
   n_features: 400
